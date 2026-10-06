@@ -87,6 +87,20 @@ no artifact, nothing to clean up afterwards. Sixteen in-module `moved` blocks do
 
 ### 5. Review the plan and apply
 
+DNS resolver parent scopes must remain known during planning. The pattern references managed
+subnet outputs for both default and custom endpoints instead of placing a broad `depends_on`
+on the DNS module. This preserves subnet creation ordering without deferring the child's
+provider-context data source. Subnet names not managed by the sidecar module are passed through
+unchanged and must refer to existing subnets.
+
+An omitted or explicitly null `allow_branch_to_branch_traffic` resolves to `true`, matching the
+AzureRM default. An explicit `false` remains `false`.
+
+These changes alone do not prove a migration plan safe. Inspect connection routing, deprecated
+transit fields, and Dynamic inbound endpoint IP handling against the existing ARM configuration.
+Do not ignore the entire endpoint IP configuration list to conceal a server-assigned IP diff,
+as that would also hide subnet and Static IP changes.
+
 ```bash
 terraform show -json tfplan > tfplan.json
 terraform apply tfplan

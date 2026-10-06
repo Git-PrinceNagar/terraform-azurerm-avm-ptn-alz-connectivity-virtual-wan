@@ -106,11 +106,18 @@ module "dns_resolver" {
   resource_group_name         = each.value.resource_group_name
   virtual_network_resource_id = module.virtual_network_side_car[each.key].resource_id
   enable_telemetry            = var.enable_telemetry
-  inbound_endpoints           = each.value.inbound_endpoints
-  outbound_endpoints          = each.value.outbound_endpoints
-  tags                        = each.value.tags
-
-  depends_on = [module.virtual_network_side_car]
+  # Reference managed subnet outputs without deferring the child's provider-context data sources.
+  inbound_endpoints = {
+    for key, endpoint in each.value.inbound_endpoints : key => merge(endpoint, {
+      subnet_name = lookup(local.private_dns_resolver_subnet_names[each.key], endpoint.subnet_name, endpoint.subnet_name)
+    })
+  }
+  outbound_endpoints = {
+    for key, endpoint in each.value.outbound_endpoints : key => merge(endpoint, {
+      subnet_name = lookup(local.private_dns_resolver_subnet_names[each.key], endpoint.subnet_name, endpoint.subnet_name)
+    })
+  }
+  tags = each.value.tags
 }
 
 module "private_dns_zones" {

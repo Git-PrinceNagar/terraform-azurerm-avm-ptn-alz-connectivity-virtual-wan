@@ -38,8 +38,9 @@ variable "virtual_wan_name" {
 variable "allow_branch_to_branch_traffic" {
   type        = bool
   default     = true
+  nullable    = false
   description = <<DESCRIPTION
-  Boolean toggle to toggle support for VWAN branch to branch traffic. Branches are locations connected over ExpressRoute or Site-to-Site VPNs to a Virtual WAN Hub. Defaults to true.
+  Boolean toggle to toggle support for VWAN branch to branch traffic. Branches are locations connected over ExpressRoute or Site-to-Site VPNs to a Virtual WAN Hub. Omitted or explicitly null values default to true; an explicit false is preserved.
 
   For more information review: https://learn.microsoft.com/azure/virtual-wan/virtual-wan-global-transit-network-architecture
   DESCRIPTION
