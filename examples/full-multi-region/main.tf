@@ -2,6 +2,12 @@ terraform {
   required_version = "~> 1.5"
 
   required_providers {
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.12"
+    }
+    # azurerm is still required: the `Azure/avm-res-resources-resourcegroup/azurerm` module
+    # below, and several AVM modules reached through `../../`, are azurerm-based.
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.21"
@@ -13,7 +19,7 @@ provider "azurerm" {
   features {}
 }
 
-data "azurerm_client_config" "current" {}
+data "azapi_client_config" "current" {}
 
 locals {
   config_templating_inputs = {
@@ -33,10 +39,10 @@ module "config" {
   custom_replacements             = var.custom_replacements
   inputs                          = local.config_templating_inputs
   starter_locations               = var.starter_locations
-  subscription_id_connectivity    = data.azurerm_client_config.current.subscription_id
-  subscription_id_identity        = data.azurerm_client_config.current.subscription_id
-  subscription_id_management      = data.azurerm_client_config.current.subscription_id
-  subscription_id_security        = data.azurerm_client_config.current.subscription_id
+  subscription_id_connectivity    = data.azapi_client_config.current.subscription_id
+  subscription_id_identity        = data.azapi_client_config.current.subscription_id
+  subscription_id_management      = data.azapi_client_config.current.subscription_id
+  subscription_id_security        = data.azapi_client_config.current.subscription_id
   enable_telemetry                = var.enable_telemetry
   root_parent_management_group_id = ""
 }

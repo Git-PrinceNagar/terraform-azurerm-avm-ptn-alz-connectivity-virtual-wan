@@ -2,6 +2,16 @@ terraform {
   required_version = "~> 1.5"
 
   required_providers {
+    # This example declares no azapi_* address of its own; azapi arrives through the
+    # module under test. The pin is kept so the example resolves the same provider
+    # version the module does. The annotation must be the line IMMEDIATELY above.
+    # tflint-ignore: terraform_unused_required_providers
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.12"
+    }
+    # azurerm is still required: the `Azure/avm-res-resources-resourcegroup/azurerm` module
+    # below, and several AVM modules reached through `../../`, are azurerm-based.
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.21"

@@ -1,11 +1,10 @@
 module "firewall_policy" {
-  source   = "Azure/avm-res-network-firewallpolicy/azurerm"
-  version  = "0.3.3"
+  # tflint-ignore: avm_terraform_module_source_required // pre-release packaging exception, not AVM source compliance: immutable-commit pin, to be replaced by the registry source on release
+  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-firewallpolicy.git?ref=0c4a59d2643a39880c9950095056fefce44ff4de"
   for_each = local.firewall_policies
 
   location                                          = each.value.location
   name                                              = each.value.name
-  resource_group_name                               = each.value.resource_group_name
   enable_telemetry                                  = var.enable_telemetry
   firewall_policy_auto_learn_private_ranges_enabled = each.value.auto_learn_private_ranges_enabled
   firewall_policy_base_policy_id                    = each.value.base_policy_id
@@ -19,31 +18,42 @@ module "firewall_policy" {
   firewall_policy_sql_redirect_allowed              = each.value.sql_redirect_allowed
   firewall_policy_threat_intelligence_allowlist     = each.value.threat_intelligence_allowlist
   firewall_policy_threat_intelligence_mode          = each.value.threat_intelligence_mode
-  firewall_policy_timeouts                          = var.timeouts
+  firewall_policy_timeouts                          = local.timeouts
   firewall_policy_tls_certificate                   = each.value.tls_certificate
+  resource_group_name                               = each.value.resource_group_name
   tags                                              = each.value.tags
 }
 
+# =============================================================================
+# TFFR6 / TFFR7 / TFFR8 CASCADE INTO THE VIRTUAL WAN SUBMODULE.
+#
+# `resource_types` and `ignore_body_changes` are passed straight through. Both
+# are neutral with the root inputs unset: every `resource_types` leaf is
+# `optional(string)` with no default, so it arrives as a null and the declaring
+# module substitutes its own default (MEASURED on Terraform 1.16.2), and every
+# `ignore_body_changes` leaf defaults to `[]`, which is already every receiving
+# module's default.
+#
+# `retry` and `timeouts` are cascaded as the caller wrote them. Their root defaults live in
+# `locals.retry.tf` and `locals.timeouts.tf`, so an unset attribute arrives here as null and the
+# Virtual WAN submodule substitutes its own per-resource default (90m firewall create/update/delete,
+# for example). The root's own children keep the defaults they always had.
+# =============================================================================
 module "virtual_wan" {
   source = "./modules/virtual-wan"
   count  = local.has_regions ? 1 : 0
 
-  location                       = local.virtual_wan.location
-  resource_group_name            = local.virtual_wan.resource_group_name
-  virtual_wan_name               = local.virtual_wan.name
-  allow_branch_to_branch_traffic = local.virtual_wan.allow_branch_to_branch_traffic
-  bgp_connections                = local.bgp_connections
-  disable_vpn_encryption         = local.virtual_wan.disable_vpn_encryption
-  enable_telemetry               = var.enable_telemetry
-  er_circuit_connections         = local.express_route_circuit_connections
-  expressroute_gateways          = local.virtual_network_gateways_express_route
-  firewalls                      = local.firewalls
-  ignore_body_changes = {
-    network_azure_firewalls = {
-      network_azure_firewalls      = var.ignore_body_changes.virtual_hubs_firewalls
-      insights_diagnostic_settings = var.ignore_body_changes.virtual_hubs_firewalls_diagnostic_settings
-    }
-  }
+  location                              = local.virtual_wan.location
+  resource_group_name                   = local.virtual_wan.resource_group_name
+  virtual_wan_name                      = local.virtual_wan.name
+  allow_branch_to_branch_traffic        = local.virtual_wan.allow_branch_to_branch_traffic
+  bgp_connections                       = local.bgp_connections
+  disable_vpn_encryption                = local.virtual_wan.disable_vpn_encryption
+  enable_telemetry                      = var.enable_telemetry
+  er_circuit_connections                = local.express_route_circuit_connections
+  expressroute_gateways                 = local.virtual_network_gateways_express_route
+  firewalls                             = local.firewalls
+  ignore_body_changes                   = local.ignore_body_changes_virtual_wans
   office365_local_breakout_category     = local.virtual_wan.office365_local_breakout_category
   p2s_gateway_vpn_server_configurations = local.p2s_gateway_vpn_server_configurations
   p2s_gateways                          = local.p2s_gateways
@@ -80,15 +90,15 @@ module "virtual_network_side_car" {
   enable_telemetry     = var.enable_telemetry
   ignore_body_changes  = local.sidecar_virtual_network_ignore_body_changes
   name                 = each.value.name
-  retry                = var.retry
+  retry                = local.retry
   subnets              = local.subnets[each.key]
   tags                 = each.value.tags
-  timeouts             = var.timeouts
+  timeouts             = local.timeouts
 }
 
 module "dns_resolver" {
-  source   = "Azure/avm-res-network-dnsresolver/azurerm"
-  version  = "0.7.3"
+  # tflint-ignore: avm_terraform_module_source_required // pre-release packaging exception, not AVM source compliance: immutable-commit pin, to be replaced by the registry source on release
+  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-dnsresolver.git?ref=e56718b8e382c867a70190f42e91ab4c6741b9d0"
   for_each = local.private_dns_resolver
 
   location                    = each.value.location
@@ -139,9 +149,9 @@ module "private_dns_zone_auto_registration" {
 }
 
 module "ddos_protection_plan" {
-  source  = "Azure/avm-res-network-ddosprotectionplan/azurerm"
-  version = "0.3.0"
-  count   = local.ddos_protection_plan_enabled ? 1 : 0
+  # tflint-ignore: avm_terraform_module_source_required // pre-release packaging exception, not AVM source compliance: immutable-commit pin, to be replaced by the registry source on release
+  source = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-ddosprotectionplan.git?ref=356eec4f7a515ea473f489b6b27595f911292550"
+  count  = local.ddos_protection_plan_enabled ? 1 : 0
 
   location            = local.ddos_protection_plan.location
   name                = local.ddos_protection_plan.name
@@ -151,13 +161,13 @@ module "ddos_protection_plan" {
 }
 
 module "bastion_public_ip" {
-  source   = "Azure/avm-res-network-publicipaddress/azurerm"
-  version  = "0.2.0"
+  # tflint-ignore: avm_terraform_module_source_required // pre-release packaging exception, not AVM source compliance: immutable-commit pin, to be replaced by the registry source on release
+  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-publicipaddress.git?ref=c9f4bd6951e8b9bc8c8ec3fe8a5975b1def750d4"
   for_each = local.bastion_host_public_ips
 
   location                = each.value.location
   name                    = each.value.name
-  resource_group_name     = each.value.resource_group_name
+  parent_id               = each.value.parent_id
   allocation_method       = each.value.public_ip_settings.allocation_method
   ddos_protection_mode    = each.value.public_ip_settings.ddos_protection_mode
   ddos_protection_plan_id = each.value.public_ip_settings.ddos_protection_plan_id
@@ -176,13 +186,13 @@ module "bastion_public_ip" {
 }
 
 module "bastion_host" {
-  source   = "Azure/avm-res-network-bastionhost/azurerm"
-  version  = "0.6.0"
+  # tflint-ignore: avm_terraform_module_source_required // pre-release packaging exception, not AVM source compliance: immutable-commit pin, to be replaced by the registry source on release
+  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-bastionhost.git?ref=6e93954c968958617cf22f671baa23cc8caab84b"
   for_each = local.bastion_hosts
 
   location               = each.value.location
   name                   = each.value.name
-  resource_group_name    = each.value.resource_group_name
+  parent_id              = each.value.parent_id
   copy_paste_enabled     = each.value.bastion_settings.copy_paste_enabled
   enable_telemetry       = var.enable_telemetry
   file_copy_enabled      = each.value.bastion_settings.file_copy_enabled
@@ -205,8 +215,9 @@ module "route_map" {
   virtual_hub_id                  = module.virtual_wan[0].virtual_hub_resource_ids[each.value.virtual_hub_key]
   associated_inbound_connections  = each.value.associated_inbound_connections
   associated_outbound_connections = each.value.associated_outbound_connections
-  ignore_body_changes             = var.ignore_body_changes.virtual_hubs_route_maps
-  retry                           = var.retry
+  ignore_body_changes             = { network_virtual_hubs_route_maps = local.ignore_body_changes_route_maps }
+  resource_types                  = var.resource_types.network_virtual_hubs_route_maps
+  retry                           = local.retry
   rules                           = each.value.rules
-  timeouts                        = var.timeouts
+  timeouts                        = local.timeouts
 }

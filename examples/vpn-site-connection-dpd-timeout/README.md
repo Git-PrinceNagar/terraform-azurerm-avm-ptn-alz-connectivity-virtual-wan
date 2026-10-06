@@ -15,8 +15,10 @@ terraform {
   required_providers {
     azapi = {
       source  = "Azure/azapi"
-      version = "~> 2.4"
+      version = "~> 2.12"
     }
+    # azurerm is still required: the `Azure/avm-res-resources-resourcegroup/azurerm` module
+    # below, and several AVM modules reached through `../../`, are azurerm-based.
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
@@ -163,7 +165,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.9)
 
-- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.4)
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
 
