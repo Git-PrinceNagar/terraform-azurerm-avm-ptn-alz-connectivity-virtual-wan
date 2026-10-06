@@ -1,8 +1,9 @@
 # Upgrade guide — moving this module from AzureRM to AzAPI
 
 This release replaces every `hashicorp/azurerm` resource this module declares with `Azure/azapi`
-equivalents. Your Virtual WAN, hubs, gateways, connections, VPN sites and firewall are **not**
-recreated: the module ships `moved` blocks that convert your state in place.
+equivalents. The intended upgrade preserves your Virtual WAN, hubs, gateways, connections,
+VPN sites and firewall through `moved` blocks. Confirm that preservation in the plan and ARM readback;
+the presence of a move block alone is not proof.
 
 **Two rules for the whole upgrade.** Plan with a normal refresh — **never `-refresh=false`**, see
 [Known limitations](#known-limitations) — and treat a `destroy` or a `replace` on a Virtual WAN
@@ -10,10 +11,10 @@ object as a stop, not something to approve.
 
 ## If you use the ALZ Landing Zones Accelerator
 
-**Take the latest Accelerator starter release and re-run the Accelerator. There is nothing else to
-do** — the starter owns both the module version pin and the `providers` map, so the version bump and
-the required `azapi` provider line arrive together. Re-plan, confirm `0 to destroy` with nothing
-replaced, and apply.
+Use a compatible Accelerator starter and verify the generated module pin and `providers` map.
+The starter owns both, but a version bump alone does not prove that your exact configuration
+has been tested. Re-plan with normal refresh, require no unintended destroys or replacements,
+and review all ARM writes against the existing configuration before approving apply.
 
 > ⚠️ **Starter releases up to and including v17.5.1 pass only `azurerm`.** If yours is one of them,
 > open `main.connectivity.virtual.wan.tf` in your generated root and add the `azapi` line to the
@@ -96,8 +97,14 @@ unchanged and must refer to existing subnets.
 An omitted or explicitly null `allow_branch_to_branch_traffic` resolves to `true`, matching the
 AzureRM default. An explicit `false` remains `false`.
 
-These changes alone do not prove a migration plan safe. Inspect connection routing, deprecated
-transit fields, and Dynamic inbound endpoint IP handling against the existing ARM configuration.
+An omitted connection `routing` preserves the configuration read from the existing matching
+connection, including custom routes and returned legacy transit flags. Explicit routing takes
+precedence; new connections continue to use Azure defaults. The DNS child preserves assigned
+Dynamic inbound IPs for matching endpoint names and subnets. These reads require list access
+to hub connections and DNS inbound endpoints.
+
+These changes alone do not prove a migration plan safe. Compare the evaluated routing and
+Dynamic inbound endpoint IPs against the existing ARM configuration before and after apply.
 Do not ignore the entire endpoint IP configuration list to conceal a server-assigned IP diff,
 as that would also hide subnet and Static IP changes.
 
@@ -106,7 +113,12 @@ terraform show -json tfplan > tfplan.json
 terraform apply tfplan
 ```
 
-**A good plan is adds and in-place changes, `0 to destroy`, and nothing replaced.** The adds are
+**Zero destroys and replacements are necessary, not sufficient.** Review every in-place ARM body
+change and existing-resource writer. Confirm route-table association and propagation, static routes,
+transit settings, endpoint IP allocation and assigned IPs, firewall-policy DNS servers, and enabled
+features against the captured baseline. An unknown value is a deferred verification, not a match.
+
+The adds are
 day-2 writers this release introduces that had no AzureRM counterpart — they are not new Azure
 objects standing in for old ones. Reference upgrades from v0.16.1 planned `4 to add, 7 to change, 0 to destroy` (a direct call to `modules/virtual-wan`) and `14 to add, 206 to change, 0 to destroy` (a full Accelerator estate); both re-planned to `No changes.` after the apply. The adds include a state-only `terraform_data.public_ip_mode` marker per firewall.
 
@@ -115,12 +127,13 @@ Three plan shapes have known causes:
 | what you see | cause | what to do |
 |---|---|---|
 | `must be replaced` with `+ location = "…" # forces replacement` | you planned with `-refresh=false` | re-plan with a normal refresh |
-| `must be replaced` with `replace_paths = [["parent_id"]]` | the call does not pass `azapi` | add `azapi = azapi.connectivity` (step 3) |
+| `must be replaced` with `replace_paths = [["parent_id"]]` | wrong provider scope, or a deferred data source made the scope unknown | verify the `azapi` provider map and dependency graph; do not assume one cause |
 | a `destroy` with no matching create | an address no `moved` block covers | **stop and report it** — the 16 moves are meant to be complete |
 
 ### 6. After the apply
 
-1. Read the children back from ARM and compare with your pre-apply readback.
+1. Read the resources and their children back from ARM and compare functional properties with
+   your pre-apply readback, including values that were unknown in the plan.
 2. Re-plan **with a normal refresh** and confirm `No changes.`
 
 ## Breaking changes

@@ -98,7 +98,7 @@ module "virtual_network_side_car" {
 
 module "dns_resolver" {
   # tflint-ignore: avm_terraform_module_source_required // pre-release packaging exception, not AVM source compliance: immutable-commit pin, to be replaced by the registry source on release
-  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-dnsresolver.git?ref=e56718b8e382c867a70190f42e91ab4c6741b9d0"
+  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-dnsresolver.git?ref=b5dadb4bf4024a3a0999f80a4da91a657c2cdc84"
   for_each = local.private_dns_resolver
 
   location                    = each.value.location

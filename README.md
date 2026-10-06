@@ -1592,7 +1592,7 @@ Version: 356eec4f7a515ea473f489b6b27595f911292550
 
 Source: git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-dnsresolver.git
 
-Version: e56718b8e382c867a70190f42e91ab4c6741b9d0
+Version: b5dadb4bf4024a3a0999f80a4da91a657c2cdc84
 
 ### <a name="module_firewall_policy"></a> [firewall\_policy](#module\_firewall\_policy)
 

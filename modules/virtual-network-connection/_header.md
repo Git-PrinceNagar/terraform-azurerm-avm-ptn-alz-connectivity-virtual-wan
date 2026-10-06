@@ -4,6 +4,15 @@ This submodule deploys an Azure virtual network connection
 
 ## Design notes
 
+### Existing routing
+
+When `routing` is omitted, the module lists connections under the hub and preserves routing
+returned for the same connection name and remote VNet. This includes custom route-table
+associations, propagation, route maps and static routes. Explicit `routing` replaces that
+inherited configuration. A new connection with omitted routing uses Azure defaults.
+Returned legacy transit flags are retained on an existing connection.
+The deployment identity needs permission to list hub/VNet connections.
+
 ### Per-resource timeout defaults
 
 `var.timeouts` keeps its published shape -- same variable name, same four attributes, same

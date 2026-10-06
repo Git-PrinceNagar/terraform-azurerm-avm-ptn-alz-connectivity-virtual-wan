@@ -1,3 +1,12 @@
+data "azapi_resource_list" "virtual_network_connections" {
+  for_each = local.virtual_network_connections
+
+  parent_id              = each.value.virtual_hub_id
+  type                   = var.resource_types.network_virtual_hubs_hub_virtual_network_connections
+  response_export_values = ["value"]
+  retry                  = var.retry
+}
+
 resource "azapi_resource" "this" {
   for_each = local.virtual_network_connections
 

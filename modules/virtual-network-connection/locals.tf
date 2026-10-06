@@ -1,8 +1,20 @@
 locals {
   virtual_network_connections = var.virtual_network_connections != null ? var.virtual_network_connections : {}
 
-  # AzureRM only sends `routingConfiguration` when the `routing` block is present
-  # (`if v, ok := d.GetOk("routing"); ok`), and when it IS present its expander always
+  # AzureRM retains Optional/Computed routing from its read when the caller omits it.
+  virtual_network_connection_existing_properties = {
+    for key, value in local.virtual_network_connections : key => merge([
+      for connection in data.azapi_resource_list.virtual_network_connections[key].output.value : {
+        for property in ["routingConfiguration", "allowHubToRemoteVnetTransit", "allowRemoteVnetToUseHubVnetGateways"] :
+        property => connection.properties[property]
+        if try(connection.properties[property], null) != null
+      }
+      if lower(connection.name) == lower(value.name) &&
+      lower(connection.properties.remoteVirtualNetwork.id) == lower(value.remote_virtual_network_id)
+    ]...)
+  }
+
+  # When routing is explicitly configured, AzureRM's expander always
   # builds `vnetRoutes.staticRoutesConfig` from two schema defaults the module never
   # exposed: `static_vnet_propagate_static_routes_enabled = true` and
   # `static_vnet_local_route_override_criteria = "Contains"`. Those literals are
@@ -10,6 +22,7 @@ locals {
   virtual_network_connection_bodies = {
     for key, value in local.virtual_network_connections : key => {
       properties = merge(
+        local.virtual_network_connection_existing_properties[key],
         {
           remoteVirtualNetwork   = { id = value.remote_virtual_network_id }
           enableInternetSecurity = value.internet_security_enabled
