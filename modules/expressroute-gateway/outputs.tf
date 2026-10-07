@@ -13,7 +13,7 @@
 # known across an in-place update.
 output "resource" {
   description = "Azure ExpressRoute Gateway resource name"
-  value       = var.expressroute_gateways != null ? [for gateway in azapi_resource.this : gateway] : []
+  value       = [for gateway in azapi_resource.this : gateway]
 }
 
 output "resource_id" {

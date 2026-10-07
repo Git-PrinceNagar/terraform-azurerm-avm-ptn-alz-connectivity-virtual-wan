@@ -6,7 +6,7 @@
 # this module for its side effect only.
 output "resource" {
   description = "Azure ExpressRoute Connection resource"
-  value       = var.er_circuit_connections != null ? [for connection in azapi_resource.this : connection] : []
+  value       = [for connection in azapi_resource.this : connection]
 }
 
 output "resource_id" {
