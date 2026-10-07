@@ -17,16 +17,19 @@ has been tested. Re-plan with normal refresh, require no unintended destroys or 
 and review all ARM writes against the existing configuration before approving apply.
 
 > ⚠️ **Starter releases up to and including v17.6.0 pass only `azurerm`.** If yours is one of them,
-> open `main.connectivity.virtual.wan.tf` in your generated root and add the `azapi` line to the
-> `module "virtual_wan"` call by hand before you plan — without it every resource lands in the wrong
+> open `main.connectivity.virtual.wan.tf` in your generated root and replace the `providers` map in
+> the `module "virtual_wan"` call by hand before you plan — without it every resource lands in the wrong
 > subscription and the upgrade plans as a full replace:
 >
 > ```hcl
 > providers = {
->   azurerm = azurerm.connectivity
->   azapi   = azapi.connectivity
+>   azapi = azapi.connectivity
 > }
 > ```
+>
+> Remove the `azurerm` line. This release declares no `azurerm` provider, so Terraform reports
+> `Reference to undefined provider` if you keep it. Keep the root `azurerm` provider blocks, because
+> other starter modules still use them.
 
 ## If you call this module directly
 
@@ -72,11 +75,13 @@ module "virtual_wan" {
   # ... your existing inputs, unchanged
 
   providers = {
-    azurerm = azurerm.connectivity
-    azapi   = azapi.connectivity # REQUIRED
+    azapi = azapi.connectivity # REQUIRED
   }
 }
 ```
+
+The module no longer declares an `azurerm` provider. Remove `azurerm` from the `providers` map;
+Terraform reports `Reference to undefined provider` if you keep it.
 
 If you have no `azapi` provider for that subscription yet, declare one with
 `alias = "connectivity"` and `subscription_id = var.subscription_ids["connectivity"]`.
