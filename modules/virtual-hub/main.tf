@@ -430,7 +430,8 @@ resource "azapi_resource_action" "tags" {
   response_export_values = []
   retry                  = var.retry
 
-  depends_on = [azapi_update_resource.this]
+  # `var.tags_depends_on` orders this write after the firewall policy writes. See the variable description.
+  depends_on = [azapi_update_resource.this, var.tags_depends_on]
 }
 
 # =============================================================================

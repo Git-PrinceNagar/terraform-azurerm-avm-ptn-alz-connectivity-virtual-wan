@@ -43,6 +43,17 @@ variable "retry" {
   description = "(Optional) Retry configuration for the resource operations."
 }
 
+variable "tags_depends_on" {
+  type        = list(string)
+  default     = []
+  description = <<DESCRIPTION
+(Optional) Resource IDs whose writes must finish before the hub tags write starts. Only the reference is used, not the values.
+
+The Virtual WAN module passes the firewall policy IDs here. A tags write puts the hub in `Updating` for several minutes. A firewall policy PUT that runs in the same window pushes the policy to the hub firewall, the firewall rejects the push with `ReferencedResourceNotProvisioned`, and the policy fails with `FirewallPolicyUpdateFailed`. The failure is the final state of a long-running operation, so `retry` cannot catch it.
+DESCRIPTION
+  nullable    = false
+}
+
 variable "timeouts" {
   type = object({
     create = optional(string, "60m")

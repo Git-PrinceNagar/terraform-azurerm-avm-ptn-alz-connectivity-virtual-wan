@@ -102,6 +102,16 @@ object({
 
 Default: `{}`
 
+### <a name="input_tags_depends_on"></a> [tags\_depends\_on](#input\_tags\_depends\_on)
+
+Description: (Optional) Resource IDs whose writes must finish before the hub tags write starts. Only the reference is used, not the values.
+
+The Virtual WAN module passes the firewall policy IDs here. A tags write puts the hub in `Updating` for several minutes. A firewall policy PUT that runs in the same window pushes the policy to the hub firewall, the firewall rejects the push with `ReferencedResourceNotProvisioned`, and the policy fails with `FirewallPolicyUpdateFailed`. The failure is the final state of a long-running operation, so `retry` cannot catch it.
+
+Type: `list(string)`
+
+Default: `[]`
+
 ### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
 
 Description: (Optional) Timeouts for the resource operations.

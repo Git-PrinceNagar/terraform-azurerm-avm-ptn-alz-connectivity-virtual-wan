@@ -161,3 +161,32 @@ run "tag_writer_targets_the_full_writers_id" {
     error_message = "the tag writer must target the FULL writer's ARM id plus /providers/Microsoft.Resources/tags/default."
   }
 }
+
+# ------------------------------------------------------------------------------------------------
+# `tags_depends_on` ONLY ORDERS THE WRITE. It must not change what the tag writer sends.
+#
+# Terraform test cannot assert apply order. The order itself is checked with `terraform graph`
+# and with a live tag-change apply that has a managed firewall in the hub.
+# ------------------------------------------------------------------------------------------------
+run "tags_depends_on_does_not_change_the_body" {
+  command = plan
+
+  variables {
+    tags_depends_on = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/firewallPolicies/fwp-test"]
+    virtual_hubs = {
+      hub_a = {
+        name                = "vhub-tags-a"
+        location            = "uksouth"
+        resource_group_name = "rg-test"
+        address_prefix      = "10.0.0.0/23"
+        virtual_wan_id      = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualWans/vwan-test"
+        tags                = { env = "test" }
+      }
+    }
+  }
+
+  assert {
+    condition     = tomap(azapi_resource_action.tags["hub_a"].body.properties.tags) == tomap({ env = "test" }) && azapi_resource_action.tags["hub_a"].method == "PUT"
+    error_message = "tags_depends_on must not change the tag writer's body or method."
+  }
+}
