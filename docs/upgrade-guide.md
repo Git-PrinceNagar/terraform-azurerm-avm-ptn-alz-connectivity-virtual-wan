@@ -235,7 +235,7 @@ inventory of the subscription, so the identity needs subscription-scoped read ac
   and delete and 5m for read. The firewall policies do not receive root `retry`. They keep the
   default of the firewall policy module.
 - A labelled `virtual_hub_route_table` with no `routes` now plans. Before this fix it failed with
-  `Cannot use a null value in for_each`. The defect existed since v0.16.1. Configurations that
+  `Cannot use a null value in for_each`. The defect has existed since v0.16.1. Configurations that
   worked before see no change.
 - A root module with both firewall modes (managed and customer public IPs) now returns its firewall
   outputs. Before this fix the outputs failed with an inconsistent conditional result type.

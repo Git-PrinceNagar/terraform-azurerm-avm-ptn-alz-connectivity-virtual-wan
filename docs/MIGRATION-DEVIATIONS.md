@@ -21,6 +21,5 @@ is that a value you set now also reaches the Virtual WAN resources.
 
 The published baseline `0.17.2` has no root `ignore_body_changes` input, so baseline callers are unaffected.
 Release `v0.18.0` introduced it with three
-top-level keys; this branch reshapes it to mirror the submodule and keeps those three keys, which are
-accepted and merged into the new ones (see `locals.ignore_body_changes.tf`). Which version ships this
-change is `v0.19.0`.
+top-level keys. Release `v0.19.0` reshapes it to mirror the submodule and keeps those three keys, which are
+accepted and merged into the new ones (see `locals.ignore_body_changes.tf`).
