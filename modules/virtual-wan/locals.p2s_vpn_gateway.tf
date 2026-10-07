@@ -149,13 +149,13 @@ locals {
   # `location` (L53, `commonschema.Location()`). All three are native replacement triggers on
   # `azapi_resource` and none of them is in the ignore list below, so parity holds without any
   # extra machinery. See the "NO PRECONDITIONS" note on the merge writer.
-  # 🔴 `tags` IS DELIBERATELY ABSENT FROM THIS BODY AS OF 0.18.0. It used to be spliced in
+  # 🔴 `tags` IS DELIBERATELY ABSENT FROM THIS BODY AS OF 0.19.0. It used to be spliced in
   # below with `try(value.tags, null) != null ? { tags = value.tags } : {}` -- carried as a
   # BODY KEY because `azapi_update_resource` has no `tags` attribute -- and that is what made
   # REG-1: the merge is additive PER KEY and preserves every undeclared key of the live object
   # unconditionally (`utils/json.go` L52-L53), so it could add and change a tag but never
   # REMOVE one, while AzureRM's Update assigned the WHOLE tag map (`tags.Expand`, L571-L573).
-  # Observed in testing on the vpnGateway. ✅ FIXED IN 0.18.0: tags now travel on
+  # Observed in testing on the vpnGateway. ✅ FIXED IN 0.19.0: tags now travel on
   # `azapi_resource_action.p2s_gateway_vpn_server_configuration_tags` in `main.p2s_vpn_gateway.tf`,
   # which
   # PUTs at `Microsoft.Resources/tags/default` and REPLACES the whole tag set. There is exactly

@@ -42,7 +42,7 @@ So the module uses two writers:
   that ID plus `resource_group_name`.
 - **Tags are written by a separate `Microsoft.Resources/tags` `PUT`.** In 0.17.x, tags rode on
   the day-2 merge writer, which can add or change a tag but *cannot delete one* — removing a key
-  from `tags` was a silent no-op in Azure (`REG-1`). As of 0.18.0 tags travel on
+  from `tags` was a silent no-op in Azure (`REG-1`). As of 0.19.0 tags travel on
   `azapi_resource_action.tags`, which `PUT`s at `Microsoft.Resources/tags/default` and
   **replaces the whole tag set**, matching AzureRM. Two consequences: a tag set **out of band is
   removed** on the next apply, the same as AzureRM would have done; and out-of-band tags are

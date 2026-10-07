@@ -85,7 +85,7 @@
 #     full writer below for the concrete consequence on this type.
 # (b) 🔴 merge is additive — the day-2 writer CANNOT UN-SET a property. It also could not remove
 #     a tag key, which was REG-1: under AzureRM, `tags.Expand` assigned the whole map, so deleting
-#     a key from config deleted it in Azure. ✅ FIXED IN 0.18.0 — tags left the merge writer's
+#     a key from config deleted it in Azure. ✅ FIXED IN 0.19.0 — tags left the merge writer's
 #     body and moved to `azapi_resource_action.tags` below, which PUTs at
 #     `Microsoft.Resources/tags/default` and REPLACES the whole tag set. The rest of cost (b),
 #     un-setting a non-tag property, still stands.
@@ -277,7 +277,7 @@ resource "azapi_resource" "this" {
 # makes the 11 undeclared writable paths listed at the top of this file safe on day 2.
 #
 # 🔴 `azapi_update_resource` has no `tags` argument and no `ignore_null_property`. Tags used to
-# travel as a BODY KEY here for that reason, and that is what made REG-1; as of 0.18.0 they are
+# travel as a BODY KEY here for that reason, and that is what made REG-1; as of 0.19.0 they are
 # gone from this body entirely and live on `azapi_resource_action.tags` below. The body is still
 # built with no null-valued keys so that nothing is merged as an explicit JSON null.
 resource "azapi_update_resource" "this" {
@@ -373,7 +373,7 @@ resource "azapi_update_resource" "this" {
 }
 
 # ──────────────────────────────────────────────────────────────────────────────── tag writer ────
-# DAY 2 — THE TAG WRITER. REG-1'S REMEDY. New in 0.18.0.
+# DAY 2 — THE TAG WRITER. REG-1'S REMEDY. New in 0.19.0.
 #
 # 🔴 WHY A SEPARATE RESOURCE AT ALL. `azapi_update_resource` is a MERGE writer, and the merge
 # preserves every undeclared key of the LIVE object unconditionally — `mergeObjectAtPath`'s map

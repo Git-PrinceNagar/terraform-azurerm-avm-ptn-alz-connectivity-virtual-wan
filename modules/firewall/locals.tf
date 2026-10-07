@@ -227,7 +227,7 @@ locals {
   # See the ForceNew note in main.tf for what that costs.
   #
   # 🔴 `tags` (commonschema.Tags(), FW L276) IS DELIBERATELY ABSENT FROM THIS
-  # BODY AS OF 0.18.0. It used to sit here as `tags = local.firewall_tags[key]`,
+  # BODY AS OF 0.19.0. It used to sit here as `tags = local.firewall_tags[key]`,
   # and that is what made REG-1: a merge writer preserves every undeclared key
   # of the live object unconditionally (`utils/json.go` L52-L53), so it can add
   # and change a tag but can NEVER remove one. Tags now travel on

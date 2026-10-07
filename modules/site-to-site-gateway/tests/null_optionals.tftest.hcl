@@ -81,7 +81,7 @@ run "all_optionals_null" {
     error_message = "The merge writer must omit bgpSettings entirely when no instance peering address is configured."
   }
 
-  # 🔴 REG-1. `tags` is absent from the merge body ALWAYS as of 0.18.0, set or unset, so the
+  # 🔴 REG-1. `tags` is absent from the merge body ALWAYS as of 0.19.0, set or unset, so the
   # merge cannot touch live tags at all. It used to be spliced in when non-null, and that is
   # what made REG-1: the merge preserves every undeclared key of the live object
   # (`utils/json.go` L52-L53), so it could add or change a tag but never REMOVE one.

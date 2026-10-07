@@ -15,7 +15,7 @@ This submodule deploys an Azure virtual wan virtual hub
 > Two consequences for consumers:
 >
 > - Day-2 body changes are **additive** — the merge writer cannot un-set a property.
->   **Tags are the exception**: since 0.18.0 they are written by a separate
+>   **Tags are the exception**: since 0.19.0 they are written by a separate
 >   `Microsoft.Resources/tags` `PUT` that **replaces the whole tag set**, so removing a key from
 >   `virtual_hubs[*].tags` removes it in Azure, as it did under `azurerm`. The cost is that a tag
 >   set out of band is removed on the next apply and is **not reported as drift**.

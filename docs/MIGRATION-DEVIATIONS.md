@@ -17,10 +17,10 @@ now live in `locals.retry.tf` and `locals.timeouts.tf`; the variables keep their
 `default = {}` but their attributes are `optional(...)` without a default. The only visible change
 is that a value you set now also reaches the Virtual WAN resources.
 
-## `ignore_body_changes` keys from the `v0.18.0` git tag kept as deprecated aliases
+## `ignore_body_changes` keys from `v0.18.0` kept as deprecated aliases
 
 The published baseline `0.17.2` has no root `ignore_body_changes` input, so baseline callers are unaffected.
-The `v0.18.0` git tag on origin (registry publication not verified here) introduced it with three
+Release `v0.18.0` introduced it with three
 top-level keys; this branch reshapes it to mirror the submodule and keeps those three keys, which are
 accepted and merged into the new ones (see `locals.ignore_body_changes.tf`). Which version ships this
-change is a release decision; nothing here implies a version number.
+change is `v0.19.0`.

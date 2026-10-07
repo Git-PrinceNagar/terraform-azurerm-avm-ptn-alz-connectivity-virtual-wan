@@ -199,12 +199,12 @@ resource "azapi_resource" "fw" {
   #       invisible. The merge writer still sees drift on the paths IT
   #       declares (sku.tier, firewallPolicy.id, virtualHub.id,
   #       hubIPAddresses.publicIPs.count) and nowhere else. `tags` LEFT that
-  #       list in 0.18.0 -- see (b) -- and `azapi_resource_action.tags` does
+  #       list in 0.19.0 -- see (b) -- and `azapi_resource_action.tags` does
   #       not detect tag drift at all, by design.
   #   (b) merge is additive -- it CANNOT un-set. It also could not remove a
   #       TAG: dropping a key from `firewalls[*].tags` was a no-op against
   #       Azure while the plan looked like it worked. That was REG-1.
-  #       ✅ FIXED IN 0.18.0 -- tags left the merge writer's body and moved to
+  #       ✅ FIXED IN 0.19.0 -- tags left the merge writer's body and moved to
   #       `azapi_resource_action.tags` below, which PUTs at
   #       `Microsoft.Resources/tags/default` and REPLACES the whole set. The
   #       rest of cost (b) still stands: setting `firewall_policy_id` back to
@@ -395,7 +395,7 @@ resource "azapi_update_resource" "fw" {
 }
 
 # ---------------------------------------------------------------------------
-# DAY 2 -- THE TAG WRITER. REG-1'S REMEDY. New in 0.18.0.
+# DAY 2 -- THE TAG WRITER. REG-1'S REMEDY. New in 0.19.0.
 #
 # 🔴 WHY A SEPARATE RESOURCE AT ALL. `azapi_update_resource` is a MERGE writer,
 # and the merge preserves every undeclared key of the LIVE object

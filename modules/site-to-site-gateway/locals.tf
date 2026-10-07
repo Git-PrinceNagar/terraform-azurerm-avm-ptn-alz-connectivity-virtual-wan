@@ -128,7 +128,7 @@ locals {
   # deliberately absent here -- declaring them on a merge writer would turn an AzureRM
   # replacement into a silent in-place change.
   #
-  # 🔴 `tags` IS DELIBERATELY ABSENT FROM THIS BODY AS OF 0.18.0. It used to be spliced in
+  # 🔴 `tags` IS DELIBERATELY ABSENT FROM THIS BODY AS OF 0.19.0. It used to be spliced in
   # here with `try(value.tags, null) != null ? { tags = value.tags } : {}`, and that is what
   # made REG-1: a merge writer preserves every undeclared key of the live object
   # (`utils/json.go` L52-L53, unconditional), so it can add and change a tag but can NEVER

@@ -1,6 +1,6 @@
 # Upgrade guide — moving this module from AzureRM to AzAPI
 
-This release replaces every `hashicorp/azurerm` resource this module declares with `Azure/azapi`
+This guide covers the upgrade to **v0.19.0**. This release replaces every `hashicorp/azurerm` resource this module declares with `Azure/azapi`
 equivalents. The intended upgrade preserves your Virtual WAN, hubs, gateways, connections,
 VPN sites and firewall through `moved` blocks. Confirm that preservation in the plan and ARM readback;
 the presence of a move block alone is not proof.
@@ -16,7 +16,7 @@ The starter owns both, but a version bump alone does not prove that your exact c
 has been tested. Re-plan with normal refresh, require no unintended destroys or replacements,
 and review all ARM writes against the existing configuration before approving apply.
 
-> ⚠️ **Starter releases up to and including v17.5.1 pass only `azurerm`.** If yours is one of them,
+> ⚠️ **Starter releases up to and including v17.6.0 pass only `azurerm`.** If yours is one of them,
 > open `main.connectivity.virtual.wan.tf` in your generated root and add the `azapi` line to the
 > `module "virtual_wan"` call by hand before you plan — without it every resource lands in the wrong
 > subscription and the upgrade plans as a full replace:
@@ -47,6 +47,11 @@ If you are **below v0.12.0**, this is a two-hop upgrade: first move to **v0.17.2
 AzureRM release — apply, confirm `No changes.`, and only then run this upgrade as a separate change.
 Do not combine the hops; a `moved` block cannot cross resource types.
 
+v0.17.2 and v0.18.0 are both direct starting points. The same `moved` blocks apply to both. If you
+use the v0.18.0 `ignore_body_changes` keys `virtual_hubs_firewalls`,
+`virtual_hubs_firewalls_diagnostic_settings` or `virtual_hubs_route_maps`, you can keep them. This
+release accepts them as deprecated aliases and merges them into the new keys.
+
 ### 2. Raise your Terraform floor to 1.11
 
 `modules/site-to-site-gateway-connection` declares `required_version = "~> 1.11"`. It sends the
@@ -63,7 +68,7 @@ Resource placement used to come from the `azurerm` provider you passed. It now c
 ```hcl
 module "virtual_wan" {
   source  = "Azure/avm-ptn-alz-connectivity-virtual-wan/azurerm"
-  version = "<the new version>"
+  version = "0.19.0"
   # ... your existing inputs, unchanged
 
   providers = {
@@ -120,7 +125,17 @@ features against the captured baseline. An unknown value is a deferred verificat
 
 The adds are
 day-2 writers this release introduces that had no AzureRM counterpart — they are not new Azure
-objects standing in for old ones. Reference upgrades from v0.16.1 planned `4 to add, 7 to change, 0 to destroy` (a direct call to `modules/virtual-wan`) and `14 to add, 206 to change, 0 to destroy` (a full Accelerator estate); both re-planned to `No changes.` after the apply. The adds include a state-only `terraform_data.public_ip_mode` marker per firewall.
+objects standing in for old ones. The reference upgrades below all had 0 destroys and 0 replacements, and each one re-planned to `No changes.` after the apply:
+
+| from | estate | plan |
+|---|---|---|
+| v0.16.1 | direct call to `modules/virtual-wan` | `4 to add, 7 to change, 0 to destroy` |
+| v0.16.1 | full Accelerator estate | `14 to add, 206 to change, 0 to destroy` |
+| v0.17.2 | full Accelerator estate | `44 to add, 246 to change, 0 to destroy` |
+| v0.17.2 | root module with every optional feature (two hubs, firewalls, VPN, ExpressRoute gateway, P2S, BGP, routing intent, DNS resolver, Bastion, sidecar networks) | `13 to add, 29 to change, 0 to destroy` |
+| v0.18.0 | root module with customer firewall public IPs and a firewall policy in a different region | `6 to add, 8 to change, 0 to destroy` |
+
+The adds include a state-only `terraform_data.public_ip_mode` marker per firewall.
 
 Three plan shapes have known causes:
 
@@ -194,6 +209,11 @@ returned by the gateway-connection output, because re-emitting it would put the 
   change them in place is untested.
 - **`terraform apply` can return while ARM is still working** — a tags-only change completes in
   seconds and leaves the resource `Updating` for minutes.
+- **Hub tags are written after the firewall policy writes.** A hub tag write puts the hub in
+  `Updating` for about four minutes. A firewall policy write in the same window fails with
+  `FirewallPolicyUpdateFailed` ("faulted referenced firewalls"), because the firewall cannot update
+  while its hub is not `Succeeded`. The module now orders the hub tag writes after the firewall
+  policies it creates, so a tag change on hubs and policies in one apply succeeds.
 - **Per-path drift suppression is unavailable on the day-2 update writers** (the provider offers no
   such argument there); the only lever is the whole resource.
 - **A pre-shared key passed through a root variable still appears in plan JSON** at the variable
@@ -206,6 +226,19 @@ A firewall whose `ip_configurations` map is non-empty uses the caller-owned publ
 The mode is recorded in state and cannot be changed by a normal apply: moving an existing firewall between managed
 and customer modes fails with an error and needs a separately planned migration. Customer mode reads the firewall
 inventory of the subscription, so the identity needs subscription-scoped read access on `Microsoft.Network/azureFirewalls`.
+
+## Other changes in v0.19.0
+
+- Root `retry` and `timeouts` now reach `module.virtual_wan` and all of its resources, including
+  both firewall modes. An attribute you leave unset arrives as null, and each receiving module keeps
+  its own default, so nothing changes if you set neither. The firewall keeps 90m for create, update
+  and delete and 5m for read. The firewall policies do not receive root `retry`. They keep the
+  default of the firewall policy module.
+- A labelled `virtual_hub_route_table` with no `routes` now plans. Before this fix it failed with
+  `Cannot use a null value in for_each`. The defect existed since v0.16.1. Configurations that
+  worked before see no change.
+- A root module with both firewall modes (managed and customer public IPs) now returns its firewall
+  outputs. Before this fix the outputs failed with an inconsistent conditional result type.
 
 ## How to check the upgrade yourself
 
@@ -224,14 +257,18 @@ inventory of the subscription, so the identity needs subscription-scoped read ac
 
 Three kinds of evidence exist and they are not interchangeable:
 
-- **Live upgrades.** Upgrades from v0.16.1 on live Azure, with plan, apply, a clean re-plan and a
-  leaf-by-leaf comparison of the objects read back from ARM. The five child modules were consumed from pinned
-  builds in those runs, not from published registry versions.
+- **Live upgrades.** Upgrades from v0.16.1, v0.17.2 and v0.18.0 on live Azure. Each run had a plan,
+  an apply, a clean re-plan and a leaf-by-leaf comparison of the objects read back from ARM. The
+  v0.17.2 run with every optional feature also checked traffic after the upgrade: ping between spokes
+  through the hub firewall, DNS through both resolver inbound endpoints, and a Bastion connection. It
+  then ran a tag change on all objects and a full destroy. The five child modules were consumed from
+  pinned builds in those runs, not from published registry versions.
 - **Mocked unit tests (`terraform test`).** They check input validation, the firewall customer-IP mode, output shapes
   and stable resource identity. They do **not** prove the AzureRM to AzAPI state move: mock providers cannot simulate
   a move across providers, so `tests/unit/firewall_upgrade.tftest.hcl` exercises only the AzAPI code.
-- **Same-state upgrade from v0.17.2 with registry-pinned children.** Not yet measured live. Do not read the live
-  results above as covering that exact combination.
+- **Registry-pinned children.** The release pins the five child modules to their registry versions.
+  Those versions contain the same code as the tested builds. A plan against the registry versions
+  must show no difference from the tested builds.
 
 ## Known limitations
 
@@ -249,15 +286,26 @@ Three kinds of evidence exist and they are not interchangeable:
   `terraform state show <address>`; nothing in a plan will remind you.
 - **The create-only writer keeps its create-time API version. Changing it is not supported in this
   release.**
-- **Live coverage of the `moved` blocks is partial.** Exercised on live ARM during validation: the Virtual
-  WAN, hub, firewall, VPN gateway, VPN site and connection, ExpressRoute gateway, hub virtual network
-  connection, routing intent, BGP connection, Point-to-Site gateway and server configuration, the module's own
-  resource group, the hub route table and the firewall diagnostic setting. **Not exercised live:** the
-  ExpressRoute gateway connection, the generated private DNS zone virtual network link moves, and the moves for
-  the optional bastion, public IP, DNS resolver and DDoS plan child modules. If your estate has any of those,
-  read the plan before you apply and treat a `must be replaced` as a defect in the release.
-- **ExpressRoute connections have never been exercised against live ARM** — no circuit was available.
+- **Live coverage of the `moved` blocks.** Exercised on live ARM during validation: the Virtual
+  WAN, hub, firewall, firewall policy, VPN gateway, VPN site and connection, ExpressRoute gateway, hub virtual
+  network connection, routing intent, BGP connection, Point-to-Site gateway and server configuration, the
+  module's own resource group, the hub route table, the firewall diagnostic setting, the Bastion host and its
+  public IP, and the DNS resolver with its endpoints, ruleset, rules and virtual network link. The DDoS plan
+  child module was exercised on its own. **Not exercised live:** the ExpressRoute gateway connection and the
+  generated private DNS zone virtual network link moves. If your estate has any of those, read the plan before
+  you apply and treat a `must be replaced` as a defect in the release.
+- **ExpressRoute connections have never been exercised against live ARM.** No provisioned circuit was
+  available. The ExpressRoute gateway itself was exercised.
 - **`properties.natRules` on VPN gateways is unmeasured** beyond plan level.
+- **Other parallel writes can still fail a firewall policy update.** The module orders its hub tag
+  writes after the firewall policies. It does not order other hub writes, such as a hub property change,
+  against a policy write in the same apply. A change to a base policy that you own outside this module
+  also updates the child policies and their firewalls, and the module cannot order that. If an apply fails
+  with `FirewallPolicyUpdateFailed` and "faulted referenced firewalls", wait until the hub is `Succeeded`
+  and apply again. A policy left `Failed` recovers with one more apply.
+- **v0.17.2 cannot associate a module-created connection with a custom route table from the same
+  module.** This is a dependency cycle in v0.17.2. If you worked around it with propagation labels, the
+  upgrade keeps your labels unchanged.
 - **Destroy ordering with literal IDs.** If a BGP connection refers to its hub virtual network connection by a
   literal ID string rather than a Terraform reference, Terraform has no dependency edge and may delete both in
   parallel; Azure then rejects the connection delete with `HubVnetConnectionInUseByHubBgpConnection`. Re-running

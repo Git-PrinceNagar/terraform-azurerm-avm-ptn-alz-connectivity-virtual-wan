@@ -136,7 +136,7 @@ resource "azapi_resource" "this" {
   #       everywhere else.
   #   (b) the merge writer is ADDITIVE and cannot UN-SET a property. It also could not remove a
   #       TAG, which was REG-1: AzureRM's update assigned the whole tag map (`tags.Expand`,
-  #       L200), so removal worked there. ✅ FIXED IN 0.18.0 -- tags left the merge writer's
+  #       L200), so removal worked there. ✅ FIXED IN 0.19.0 -- tags left the merge writer's
   #       body and moved to `azapi_resource_action.tags`, which PUTs at
   #       `Microsoft.Resources/tags/default` and REPLACES the whole set. The rest of cost (b),
   #       un-setting a non-tag property, still stands.
@@ -201,7 +201,7 @@ resource "azapi_update_resource" "this" {
   resource_id = azapi_resource.this[each.key].id
   type        = var.resource_types.network_express_route_gateways
   body = {
-    # 🔴 `tags` IS DELIBERATELY ABSENT AS OF 0.18.0. It used to sit here, and that is what made
+    # 🔴 `tags` IS DELIBERATELY ABSENT AS OF 0.19.0. It used to sit here, and that is what made
     # REG-1: the merge preserves every undeclared key of the live object unconditionally
     # (`utils/json.go` L52-L53), so a merge writer can never REMOVE a tag. Tags now travel on
     # `azapi_resource_action.tags` below, which REPLACES the whole tag set.
@@ -293,7 +293,7 @@ resource "azapi_update_resource" "this" {
 }
 
 # ----------------------------------------------------------------------------------- tag writer
-# DAY 2 -- THE TAG WRITER. REG-1'S REMEDY. New in 0.18.0.
+# DAY 2 -- THE TAG WRITER. REG-1'S REMEDY. New in 0.19.0.
 #
 # 🔴 WHY A SEPARATE RESOURCE AT ALL. `azapi_update_resource` is a MERGE writer, and the merge
 # preserves every undeclared key of the LIVE object unconditionally -- `mergeObjectAtPath`'s map

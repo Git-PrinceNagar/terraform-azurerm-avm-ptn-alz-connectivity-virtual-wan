@@ -376,7 +376,7 @@ resource "azapi_update_resource" "this" {
 }
 
 # ---------------------------------------------------------------------------
-# DAY 2 -- THE TAG WRITER. REG-1'S REMEDY. New in 0.18.0.
+# DAY 2 -- THE TAG WRITER. REG-1'S REMEDY. New in 0.19.0.
 #
 # 🔴 WHY A SEPARATE RESOURCE AT ALL. `azapi_update_resource` is a MERGE writer, and the merge
 # preserves every undeclared key of the LIVE object unconditionally -- `mergeObjectAtPath`'s

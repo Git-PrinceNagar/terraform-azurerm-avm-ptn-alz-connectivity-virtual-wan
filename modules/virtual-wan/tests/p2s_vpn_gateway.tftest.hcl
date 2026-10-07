@@ -571,7 +571,7 @@ run "p2s_optionals_all_set" {
     error_message = "dns_servers must map to properties.customDnsServers when non-empty."
   }
 
-  # 🔴 REG-1, INVERTED IN 0.18.0. This assertion used to require the OPPOSITE -- that tags rode
+  # 🔴 REG-1, INVERTED IN 0.19.0. This assertion used to require the OPPOSITE -- that tags rode
   # on the merge writer as a BODY KEY, because `azapi_update_resource` has no `tags` attribute --
   # and that is exactly what made REG-1: the merge is additive PER KEY (`utils/json.go` L52-L53
   # copies every undeclared live key straight back into the request), so DELETING a tag left it

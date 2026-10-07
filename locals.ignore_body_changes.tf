@@ -1,5 +1,5 @@
 locals {
-  # Merges the deprecated keys from the v0.18.0 git tag into their replacements.
+  # Merges the deprecated keys from v0.18.0 into their replacements.
   ignore_body_changes_route_maps = distinct(concat(
     var.ignore_body_changes.network_virtual_hubs_route_maps.network_virtual_hubs_route_maps,
     var.ignore_body_changes.virtual_hubs_route_maps.virtual_hubs_route_maps,

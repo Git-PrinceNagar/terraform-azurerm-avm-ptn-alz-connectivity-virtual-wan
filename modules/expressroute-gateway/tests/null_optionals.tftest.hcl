@@ -98,7 +98,7 @@ run "all_optionals_null" {
     error_message = "The merge writer must declare neither expressRouteConnections nor virtualHub: the first is owned elsewhere and the second is ForceNew, so AzureRM's Update could never send it."
   }
 
-  # 🔴 REG-1, INVERTED IN 0.18.0. This assertion used to require the OPPOSITE -- that the merge
+  # 🔴 REG-1, INVERTED IN 0.19.0. This assertion used to require the OPPOSITE -- that the merge
   # writer carried `tags` in its body -- and that is exactly what made REG-1: the merge
   # preserves every undeclared key of the live object (`utils/json.go` L52-L53), so a tag could
   # be added or changed but never REMOVED. Tags now travel on `azapi_resource_action.tags`, and

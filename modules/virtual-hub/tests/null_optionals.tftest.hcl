@@ -128,7 +128,7 @@ run "all_optionals_null" {
     error_message = "the day-2 merge body must carry hubRoutingPreference (azurerm update L285)."
   }
 
-  # 🔴 REG-1, INVERTED IN 0.18.0. This assertion used to require the OPPOSITE -- that the merge
+  # 🔴 REG-1, INVERTED IN 0.19.0. This assertion used to require the OPPOSITE -- that the merge
   # body carried `tags` -- and that is what made REG-1: the merge preserves every undeclared key
   # of the live object (`utils/json.go` L52-L53), so a tag could be added or changed but never
   # REMOVED, while azurerm update L289 ASSIGNED the whole map.

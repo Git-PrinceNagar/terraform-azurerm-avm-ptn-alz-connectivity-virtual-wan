@@ -177,9 +177,9 @@ Default: `true`
 
 Description: (Optional) Body property paths on the resources this module creates through the `azapi` provider that the provider stops reconciling after creation, so an out-of-band controller such as Azure Virtual Network Manager or an Azure Policy `DeployIfNotExists` assignment can own them without producing perpetual drift. Paths use dot notation.
 
-- `virtual_hubs_firewalls` - (Optional, deprecated) Alias kept for callers of the v0.18.0 git tag. Merged into `network_virtual_wans.network_azure_firewalls.network_azure_firewalls`. Default `[]`.
-- `virtual_hubs_firewalls_diagnostic_settings` - (Optional, deprecated) Alias kept for callers of the v0.18.0 git tag. Merged into `network_virtual_wans.network_azure_firewalls.insights_diagnostic_settings`. Default `[]`.
-- `virtual_hubs_route_maps` - (Optional, deprecated) Alias kept for callers of the v0.18.0 git tag, same shape. Merged into `network_virtual_hubs_route_maps`. Default `[]`.
+- `virtual_hubs_firewalls` - (Optional, deprecated) Alias kept for callers of v0.18.0. Merged into `network_virtual_wans.network_azure_firewalls.network_azure_firewalls`. Default `[]`.
+- `virtual_hubs_firewalls_diagnostic_settings` - (Optional, deprecated) Alias kept for callers of v0.18.0. Merged into `network_virtual_wans.network_azure_firewalls.insights_diagnostic_settings`. Default `[]`.
+- `virtual_hubs_route_maps` - (Optional, deprecated) Alias kept for callers of v0.18.0, same shape. Merged into `network_virtual_hubs_route_maps`. Default `[]`.
 - `network_virtual_hubs_route_maps` - (Optional) An object with the following field:
   - `network_virtual_hubs_route_maps` - (Optional) Ignored body paths applied to every route map in `route_maps`. Default `[]`.
 - `network_virtual_wans` - (Optional) Ignored body paths for everything below the Virtual WAN submodule. One key per resource type it declares itself (`network_p2s_vpn_gateways`, `network_virtual_hubs_bgp_connections`, `network_virtual_hubs_hub_route_tables`, `network_virtual_hubs_routing_intent`, `network_virtual_wans`, `network_vpn_server_configurations`, `resources_resource_groups`), plus one nested object per submodule it calls (`network_azure_firewalls`, `network_express_route_gateways`, `network_express_route_gateways_express_route_connections`, `network_virtual_hubs`, `network_virtual_hubs_hub_virtual_network_connections`, `network_vpn_gateways`, `network_vpn_gateways_vpn_connections`, `network_vpn_sites`). Every leaf defaults to `[]`.
@@ -195,7 +195,7 @@ Type:
 
 ```hcl
 object({
-    # Deprecated aliases for the shape introduced in the v0.18.0 git tag. Each is merged into its replacement below.
+    # Deprecated aliases for the shape introduced in v0.18.0. Each is merged into its replacement below.
     virtual_hubs_firewalls                     = optional(list(string), [])
     virtual_hubs_firewalls_diagnostic_settings = optional(list(string), [])
     virtual_hubs_route_maps = optional(object({
@@ -325,9 +325,9 @@ Default: `{}`
 
 ### <a name="input_retry"></a> [retry](#input\_retry)
 
-Description: (Optional) Retry configuration for the resource operations, cascaded to every AzAPI resource this module and its submodules create.
+Description: (Optional) Retry configuration for the AzAPI resource operations. The module passes it to the Virtual WAN submodule, the sidecar virtual networks and the route maps. The firewall policies do not receive it and keep the retry default of the firewall policy module.
 
-Any attribute left unset keeps the default of the module that receives it. The sidecar virtual networks, the route maps and the firewall policies retry on `ReferencedResourceNotProvisioned`, `UpdateGatewayInProgress`, `CannotDeleteVirtualHubWhenItIsInUse` and `InUseVirtualWanCannotBeDeleted`, every 10 seconds up to 180 seconds (see `locals.retry.tf`). The Virtual WAN submodule and its children keep their own per-resource defaults. An attribute you set applies everywhere.
+Any attribute left unset keeps the default of the module that receives it. The sidecar virtual networks and the route maps retry on `ReferencedResourceNotProvisioned`, `UpdateGatewayInProgress`, `CannotDeleteVirtualHubWhenItIsInUse` and `InUseVirtualWanCannotBeDeleted`, every 10 seconds up to 180 seconds (see `locals.retry.tf`). The Virtual WAN submodule and its children keep their own per-resource defaults. An attribute you set applies to every resource that receives this input.
 
 Type:
 

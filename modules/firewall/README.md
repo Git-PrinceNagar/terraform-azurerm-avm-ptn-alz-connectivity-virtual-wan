@@ -31,7 +31,7 @@ Three consequences are visible from outside the module:
 - **Tags are written by a separate `Microsoft.Resources/tags` `PUT`.** In
   0.17.x they rode on the merge writer, which can add or change a tag but
   cannot delete one, so removing a key was a silent no-op (`REG-1`). As of
-  0.18.0 `azapi_resource_action.tags` `PUT`s at
+  0.19.0 `azapi_resource_action.tags` `PUT`s at
   `Microsoft.Resources/tags/default` and **replaces the whole tag set**,
   matching AzureRM. A tag set out of band is therefore **removed** on the next
   apply — and is **not reported as drift**, because that resource's read issues

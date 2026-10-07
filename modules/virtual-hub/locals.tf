@@ -90,7 +90,7 @@ locals {
   # ForceNew and so were never part of an update at all.
   virtual_hub_update_bodies = {
     for key, value in local.virtual_hubs : key => {
-      # 🔴 `tags` IS DELIBERATELY ABSENT FROM THIS BODY AS OF 0.18.0. It used to sit here as
+      # 🔴 `tags` IS DELIBERATELY ABSENT FROM THIS BODY AS OF 0.19.0. It used to sit here as
       # `tags = value.tags != null ? value.tags : {}`, and that is what made REG-1: a merge
       # writer preserves every undeclared key of the live object unconditionally
       # (`utils/json.go` L52-L53), so it can add and change a tag but can NEVER remove one --
