@@ -142,7 +142,9 @@ module "virtual_hubs" {
   ignore_body_changes = var.ignore_body_changes.network_virtual_hubs
   resource_types      = var.resource_types.network_virtual_hubs
   retry               = var.retry
-  timeouts            = var.timeouts
+  # Orders the hub tags write after the firewall policy writes. See `tags_depends_on` in `../virtual-hub`.
+  tags_depends_on = compact([for value in values(var.firewalls) : value.firewall_policy_id])
+  timeouts        = var.timeouts
   virtual_hubs = {
     for key, value in local.virtual_hubs : key => {
       name                                   = value.name
