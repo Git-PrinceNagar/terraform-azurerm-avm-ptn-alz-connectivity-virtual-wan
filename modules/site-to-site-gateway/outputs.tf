@@ -101,7 +101,7 @@ output "ip_configuration_ids" {
 # `resource_id`, `vpn_gateway_id` and `vpn_gateway_name` are unaffected.
 output "resource" {
   description = "Azure VPN Gateway"
-  value       = var.vpn_gateways != null ? [for gateway in azapi_resource.this : gateway] : null
+  value       = var.vpn_gateways == null ? null : [for gateway in azapi_resource.this : gateway]
 }
 
 output "resource_id" {

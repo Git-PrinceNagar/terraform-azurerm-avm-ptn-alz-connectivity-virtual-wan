@@ -1,6 +1,6 @@
 output "resource" {
   description = "Virtual Hub"
-  value       = var.virtual_network_connections != null ? [for connection in azapi_resource.this : connection] : []
+  value       = [for connection in azapi_resource.this : connection]
 }
 
 output "resource_id" {
