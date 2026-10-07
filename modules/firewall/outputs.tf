@@ -106,21 +106,31 @@ output "resource_object" {
         # not from a response, so they stay known at plan time (
         # observed in testing). The other two are response-only and come from the read-only data
         # source; `main.tf` records why that is allowed.
-        virtual_hub = [
+        virtual_hub = tolist([
           {
-            virtual_hub_id      = local.firewalls[key].virtual_hub_id
-            public_ip_count     = local.firewall_public_ip_counts[key]
-            private_ip_address  = local.firewall_private_ip_addresses[key]
-            public_ip_addresses = local.firewall_public_ip_addresses[key]
+            virtual_hub_id      = tostring(local.firewalls[key].virtual_hub_id)
+            public_ip_count     = tonumber(local.firewall_public_ip_counts[key])
+            private_ip_address  = try(tostring(local.firewall_private_ip_addresses[key]), null)
+            public_ip_addresses = tolist([for address in local.firewall_public_ip_addresses[key] : tostring(address)])
           }
-        ]
+        ])
       }
     },
+    # Managed and customer-IP firewalls can be mixed across hubs. Both branches
+    # must build the same element type, or the conditional below cannot convert
+    # the merged object to a map and the plan fails.
     {
       for key, firewall in module.customer_firewalls : key => {
-        id          = firewall.resource_id
-        name        = firewall.name
-        virtual_hub = firewall.virtual_hub
+        id   = firewall.resource_id
+        name = firewall.name
+        virtual_hub = tolist([
+          for hub in firewall.virtual_hub : {
+            virtual_hub_id      = tostring(hub.virtual_hub_id)
+            public_ip_count     = tonumber(hub.public_ip_count)
+            private_ip_address  = try(tostring(hub.private_ip_address), null)
+            public_ip_addresses = tolist([for address in hub.public_ip_addresses : tostring(address)])
+          }
+        ])
       }
     }
   ) : {}
