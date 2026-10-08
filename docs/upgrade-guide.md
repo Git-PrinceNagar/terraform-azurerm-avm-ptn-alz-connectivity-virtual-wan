@@ -1,13 +1,13 @@
-# Upgrade guide — moving this module from AzureRM to AzAPI
+# Upgrade guide: moving this module from AzureRM to AzAPI
 
 This guide covers the upgrade to **v0.19.0**. This release replaces every `hashicorp/azurerm` resource this module declares with `Azure/azapi`
 equivalents. The intended upgrade preserves your Virtual WAN, hubs, gateways, connections,
 VPN sites and firewall through `moved` blocks. Confirm that preservation in the plan and ARM readback;
 the presence of a move block alone is not proof.
 
-**Two rules for the whole upgrade.** Plan with a normal refresh — **never `-refresh=false`**, see
-[Known limitations](#known-limitations) — and treat a `destroy` or a `replace` on a Virtual WAN
-object as a stop, not something to approve.
+Plan with Terraform's default refresh. Never use `-refresh=false`; the
+[Known limitations](#known-limitations) section explains why. Stop if the plan shows a destroy or
+replacement of a Virtual WAN object. Do not approve it.
 
 ## If you use the ALZ Landing Zones Accelerator
 
@@ -18,8 +18,8 @@ and review all ARM writes against the existing configuration before approving ap
 
 > ⚠️ **Starter releases up to and including v17.6.0 pass only `azurerm`.** If yours is one of them,
 > open `main.connectivity.virtual.wan.tf` in your generated root and replace the `providers` map in
-> the `module "virtual_wan"` call by hand before you plan — without it every resource lands in the wrong
-> subscription and the upgrade plans as a full replace:
+> the `module "virtual_wan"` call by hand before you plan. Without it, every resource lands in the
+> wrong subscription and the upgrade plans as a full replacement:
 >
 > ```hcl
 > providers = {
@@ -37,17 +37,17 @@ and review all ARM writes against the existing configuration before approving ap
 
 1. **Back up your state file and know how to restore it.** The upgrade is one plan and one apply; an
    interrupted apply needs manual repair from the pre-apply state.
-2. **Read your child objects back from ARM first** — `vpnConnections`, `natRules`,
-   `expressRouteConnections` — and compare the counts afterwards. A plan is not evidence a child survived.
+2. **Read your child objects back from ARM first.** Compare the counts for `vpnConnections`,
+   `natRules` and `expressRouteConnections` afterwards. A plan does not prove that a child survived.
 3. **Apply a saved, reviewed plan**, and never re-plan between review and apply.
 
 ### 1. You must be on v0.12.0 or later
 
-The only supported starting point is **`>= v0.12.0`** — the release that introduced
-`modules/virtual-wan/` and its eight `moved` blocks, which this release's own moves are written against.
+The supported starting point is **`v0.12.0` or later**. That release introduced
+`modules/virtual-wan/` and its eight `moved` blocks, which this release's moves build on.
 
-If you are **below v0.12.0**, this is a two-hop upgrade: first move to **v0.17.2** — the final
-AzureRM release — apply, confirm `No changes.`, and only then run this upgrade as a separate change.
+If you are **below v0.12.0**, upgrade in two steps. First move to **v0.17.2**, the final
+AzureRM release. Apply it, confirm `No changes.`, then run this upgrade as a separate change.
 Do not combine the hops; a `moved` block cannot cross resource types.
 
 v0.17.2 and v0.18.0 are both direct starting points. The same `moved` blocks apply to both. If you
@@ -62,7 +62,7 @@ per-link pre-shared key through AzAPI's write-only `sensitive_body`, and write-o
 exist before Terraform 1.11, so a 1.10 CLI fails while loading the provider schema at plan time.
 **The floor binds every caller, whether or not you set a key.**
 
-### 3. Pass the `azapi` provider — required, and breaking
+### 3. Pass the required `azapi` provider
 
 Resource placement used to come from the `azurerm` provider you passed. It now comes from the
 `azapi` provider the module receives, and a call that omits it silently inherits your root's default
@@ -128,9 +128,9 @@ change and existing-resource writer. Confirm route-table association and propaga
 transit settings, endpoint IP allocation and assigned IPs, firewall-policy DNS servers, and enabled
 features against the captured baseline. An unknown value is a deferred verification, not a match.
 
-The adds are
-day-2 writers this release introduces that had no AzureRM counterpart — they are not new Azure
-objects standing in for old ones. The reference upgrades below all had 0 destroys and 0 replacements, and each one re-planned to `No changes.` after the apply:
+The plan adds day-2 writers that had no AzureRM counterpart. They do not create Azure resources to
+replace existing ones. The reference upgrades below had zero destroys and zero replacements. Each
+one re-planned to `No changes.` after apply:
 
 | from | estate | plan |
 |---|---|---|
@@ -148,7 +148,7 @@ Three plan shapes have known causes:
 |---|---|---|
 | `must be replaced` with `+ location = "…" # forces replacement` | you planned with `-refresh=false` | re-plan with a normal refresh |
 | `must be replaced` with `replace_paths = [["parent_id"]]` | wrong provider scope, or a deferred data source made the scope unknown | verify the `azapi` provider map and dependency graph; do not assume one cause |
-| a `destroy` with no matching create | an address no `moved` block covers | **stop and report it** — the 16 moves are meant to be complete |
+| a `destroy` with no matching create | an address no `moved` block covers | **stop and report it**. The 16 moves should cover every resource. |
 
 ### 6. After the apply
 
@@ -160,7 +160,7 @@ Three plan shapes have known causes:
 
 ### 1. The `azapi` provider must be passed to the module call
 
-See [step 3](#3-pass-the-azapi-provider--required-and-breaking). Omitting it points every resource
+See [step 3](#3-pass-the-required-azapi-provider). Omitting it points every resource
 at the wrong subscription and plans a replace of all of them, with
 `replace_paths = [["parent_id"]]`. The `moved` blocks do not protect you from this.
 
@@ -182,7 +182,7 @@ its nested members), `ip_configuration`, `management_ip_configuration`, `dns_ser
 | `resource[key].id` / `.name` | `resource_ids[key]` / `resource_names[key]` |
 | anything else | `resource_object[key]`, or `resource[key].body.properties.*` |
 
-`resource_object` is the intended replacement — an explicitly projected object whose shape this
+`resource_object` is the intended replacement. It is an explicitly projected object whose shape this
 module owns. The computed `output` attribute is **empty** (`response_export_values = []`), so do not
 read it to recover the lost members. Both `resource` outputs go in the next major.
 
@@ -198,22 +198,22 @@ returned by the gateway-connection output, because re-emitting it would put the 
 ## Behaviour that changes after the upgrade
 
 - **Tags** are written by one `Microsoft.Resources/tags` PUT per gateway, hub, firewall and P2S
-  gateway, which **replaces the whole tag set** — tags applied out of band are removed at upgrade,
-  and **tag drift is never reported in a plan**, because the tag writer does not read from ARM.
+  gateway, which **replaces the whole tag set**. Tags applied out of band are removed at upgrade,
+  and **tag drift is never reported in a plan** because the tag writer does not read from ARM.
 - The **perpetual `vpn_link.shared_key` diff disappears** for connections this module manages; one
   you declare outside this module is unaffected and keeps diffing.
 - **Do not set `sensitive_body_version`.** The module neither accepts nor sets it; key rotation is
   detected automatically, and a stale version was measured to wipe every link on a connection.
-- **`routing.inbound_route_map_id` / `routing.outbound_route_map_id` stay silently inert** — they
-  were always dropped, and wiring them up would change live infrastructure on your first apply.
+- **`routing.inbound_route_map_id` / `routing.outbound_route_map_id` stay silently inert.** The
+  module always dropped them. Wiring them up would change live infrastructure on your first apply.
 - **`express_route_gateway_bypass_enabled` stays inert** and still sends an explicit `false` on
   create, exactly as AzureRM did.
 - **`sa_data_size_kb` / `sa_lifetime_sec`**: a non-numeric string now fails with a `tonumber()`
   error instead of a provider schema error.
 - **`vpn_site_link_id` and per-link `bgp_enabled` are no longer ForceNew**; what ARM does when you
   change them in place is untested.
-- **`terraform apply` can return while ARM is still working** — a tags-only change completes in
-  seconds and leaves the resource `Updating` for minutes.
+- **`terraform apply` can return while ARM is still working.** A tags-only change completes in
+  seconds and can leave the resource `Updating` for minutes.
 - **Hub tags are written after the firewall policy writes.** A hub tag write puts the hub in
   `Updating` for about four minutes. A firewall policy write in the same window fails with
   `FirewallPolicyUpdateFailed` ("faulted referenced firewalls"), because the firewall cannot update
@@ -277,18 +277,19 @@ Three kinds of evidence exist and they are not interchangeable:
 
 ## Known limitations
 
-- **Do not use `-refresh=false` for the upgrade plan.** This is a hard rule, not a caution. Under
-  it the moved state carries a null `location` and an unknown `parent_id`, and the plan reports
-  replacements that are not real — measured as `5 to add, 0 to change, 2 to destroy` with
+- **Do not use `-refresh=false` for the upgrade plan.** This is a hard rule, not a caution. Without
+  refresh, the moved state carries a null `location` and an unknown `parent_id`. The plan then
+  reports replacements that are not real. The measured result was
+  `5 to add, 0 to change, 2 to destroy`, with
   `+ location = "eastus" # forces replacement` on an object that a normal refresh plans as an
   in-place update. The module's ForceNew preconditions do **not** catch it, because `ignore_changes`
   does not apply to a create. There is no flag, input or version that makes it safe on this upgrade.
-  ([azapi#1227](https://github.com/Azure/terraform-provider-azapi/issues/1227))
 - **The move records the newest API version embedded in the provider**, not one your configuration
-  names — an ARM resource id carries no API version, so the provider picks the newest from its own
-  index. In sovereign clouds that version may not exist and the post-move read then fails, and **this
+  names. An ARM resource ID carries no API version, so the provider picks the newest from its own
+  index. In sovereign clouds that version may not exist, and the post-move read can fail. **This
   path has never been measured in a sovereign cloud.** Read the recorded version with
-  `terraform state show <address>`; nothing in a plan will remind you.
+  `terraform state show <address>`; nothing in a plan will remind you. This is the limitation
+  tracked in [azapi#1227](https://github.com/Azure/terraform-provider-azapi/issues/1227).
 - **The create-only writer keeps its create-time API version. Changing it is not supported in this
   release.**
 - **Live coverage of the `moved` blocks.** Exercised on live ARM during validation: the Virtual
