@@ -33,6 +33,30 @@ and review all ARM writes against the existing configuration before approving ap
 
 ## If you call this module directly
 
+### Upgrading an existing repository example
+
+The examples now pin `Azure/avm-res-resources-resourcegroup/azurerm` to `0.4.0`,
+whose implementation uses AzAPI, rather than the AzureRM-based `0.2.0`.
+The registry suffix is unchanged. Module labels, instance keys, names, tags and
+`resource_id` references stay the same. The network-connection example's
+virtualnetwork `0.22.2` dependency already uses AzAPI and is unchanged.
+
+The full-multi-region example still configures AzureRM for the remote
+Accelerator config-templating utility's `azurerm_client_config` data source.
+That utility renders configuration; it does not provision the vWAN resources.
+Do not remove the example's AzureRM provider until that upstream utility has
+an AzAPI-compatible release. The other examples' resolved graphs contain no
+AzureRM dependency.
+
+The resource-group dependency ships a move from `azurerm_resource_group.this`
+to `azapi_resource.this` within each existing module instance. If you have
+deployed an older example, back up its state, run `terraform init -upgrade` and
+plan with normal refresh. Verify the resource-group moves and require no
+unintended destroys or replacements before approving a saved plan. Do not
+delete the existing resource groups or remove their state to adopt the new
+dependency. Local interface tests and validation are not a live upgrade test
+of an existing example estate.
+
 ### Before you start
 
 1. **Back up your state file and know how to restore it.** The upgrade is one plan and one apply; an
@@ -106,6 +130,14 @@ unchanged and must refer to existing subnets.
 
 An omitted or explicitly null `allow_branch_to_branch_traffic` resolves to `true`, matching the
 AzureRM default. An explicit `false` remains `false`.
+
+`virtual_wan_settings.virtual_wan.office365_local_breakout_category` also keeps
+the AzureRM default `None` and supports `Optimize`, `OptimizeAndAllow` and `All`.
+The Virtual WAN writer sends the selected value rather than silently ignoring it.
+Its embedded AzAPI schema validation is disabled because the schema marks this
+writable property read-only. The exception affects the whole WAN body, not other
+resources. See [migration deviations](MIGRATION-DEVIATIONS.md). If you supply an
+existing `virtual_wan.id`, this module does not manage that WAN's category.
 
 An omitted connection `routing` preserves the configuration read from the existing matching
 connection, including custom routes and returned legacy transit flags. Explicit routing takes
@@ -257,6 +289,25 @@ inventory of the subscription, so the identity needs subscription-scoped read ac
 4. Apply the saved plan, then re-plan and expect `No changes.`
 5. The module's `terraform test` suites (`tests/unit`, `modules/*/tests`) cover input validation, the firewall
    customer-IP mode and the output shapes without any Azure access.
+
+### Credential-free repair regressions
+
+From the repository root, initialize the root tests with
+`terraform init -backend=false -test-directory=tests/unit`, then run
+`avm test unit`. The Office365 forwarding check also inspects the evaluated
+child-resource request rather than only the root local:
+
+```powershell
+.\tests\unit\Test-Office365RootForwarding.ps1 -LogPath "$env:TEMP\office365-root.jsonl"
+.\tests\unit\Test-ExampleProviderDependencies.ps1 -OutputDirectory "$env:TEMP\vwan-example-checks"
+```
+
+The example check initializes and validates every example, rejects unexpected
+AzureRM dependencies in the resolved provider graph, and runs plans with mocked
+Azure data and telemetry disabled. It allows the documented Accelerator
+client-config dependency only in full-multi-region. These checks perform no
+Azure writes and do not verify live state
+moves, ARM category persistence, or preservation of an existing WAN's children.
 
 ## What the evidence behind this guide is
 

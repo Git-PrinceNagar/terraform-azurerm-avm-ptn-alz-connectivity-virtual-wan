@@ -13,8 +13,7 @@ terraform {
       source  = "Azure/azapi"
       version = "~> 2.12"
     }
-    # azurerm is still required: the `Azure/avm-res-resources-resourcegroup/azurerm` module
-    # below, and several AVM modules reached through `../../`, are azurerm-based.
+    # The remote Accelerator config-templating utility still reads AzureRM client config.
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.21"
@@ -56,7 +55,7 @@ module "config" {
 
 module "resource_groups" {
   source   = "Azure/avm-res-resources-resourcegroup/azurerm"
-  version  = "0.2.0"
+  version  = "0.4.0"
   for_each = module.config.outputs.connectivity_resource_groups
 
   location         = each.value.location
@@ -280,7 +279,7 @@ Version: main
 
 Source: Azure/avm-res-resources-resourcegroup/azurerm
 
-Version: 0.2.0
+Version: 0.4.0
 
 ### <a name="module_test"></a> [test](#module\_test)
 

@@ -54,26 +54,12 @@ resource "azapi_resource" "virtual_wan" {
   name      = var.virtual_wan_name
   parent_id = local.resource_group_resource_id
   type      = var.resource_types.network_virtual_wans
-  # AzureRM's Create builds `VirtualWanProperties` as a struct literal and sends every field
-  # unconditionally (`pointer.To(d.Get(...))`), so the schema defaults reached ARM on every
-  # create. All three are reproduced here. Verified against virtual_wan_resource.go at
-  # v4.81.0.
-  #
-  # 🔴 `office365_local_breakout_category` is DELIBERATELY ABSENT and this is a real
-  # behaviour difference, not an oversight. AzureRM sent
-  # `properties.office365LocalBreakoutCategory` on every create and update;
-  # `Microsoft.Network/virtualWans` marks it `readOnly` at every api-version from 2023-11-01
-  # to 2025-07-01, so AzAPI's client-side schema validation rejects the body outright with
-  # "properties.office365LocalBreakoutCategory is not expected here, it's read only". It
-  # cannot be sent without turning off `schema_validation_enabled` for the whole resource.
-  # `var.office365_local_breakout_category` is kept in the schema unchanged so no consumer
-  # configuration breaks. Whether that becomes a deprecation or something else is ticket 10
-  # and is NOT decided here.
   body = {
     properties = {
-      allowBranchToBranchTraffic = var.allow_branch_to_branch_traffic
-      disableVpnEncryption       = var.disable_vpn_encryption
-      type                       = var.type
+      allowBranchToBranchTraffic     = var.allow_branch_to_branch_traffic
+      disableVpnEncryption           = var.disable_vpn_encryption
+      office365LocalBreakoutCategory = var.office365_local_breakout_category
+      type                           = var.type
     }
   }
   ignore_body_changes = length(var.ignore_body_changes.network_virtual_wans) > 0 ? var.ignore_body_changes.network_virtual_wans : null
@@ -96,6 +82,10 @@ resource "azapi_resource" "virtual_wan" {
   # the prior value, so a new list is a no-op until a state operation is performed.
   response_export_values = []
   retry                  = local.retry
+  # ARM persisted this property in the recorded 2025-07-01 probe, despite AzAPI's
+  # read-only schema. The exception disables validation of this whole WAN body.
+  # See docs/MIGRATION-DEVIATIONS.md.
+  schema_validation_enabled = false
   # `var.tags` defaults to null and `merge` rejects a null argument, which made the original
   # expression a hard error whenever the consumer left `tags` unset. Guarded rather than
   # preserved: the null-into-function class caused a live apply failure on.

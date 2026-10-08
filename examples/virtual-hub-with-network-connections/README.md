@@ -17,21 +17,11 @@ terraform {
       source  = "Azure/azapi"
       version = "~> 2.12"
     }
-    # azurerm is still required: the `Azure/avm-res-*/azurerm` modules below, and several AVM
-    # modules reached through `../../`, are azurerm-based.
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.21"
-    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.7"
     }
   }
-}
-
-provider "azurerm" {
-  features {}
 }
 
 resource "random_string" "suffix" {
@@ -62,7 +52,7 @@ locals {
 
 module "resource_groups" {
   source   = "Azure/avm-res-resources-resourcegroup/azurerm"
-  version  = "0.2.0"
+  version  = "0.4.0"
   for_each = local.resource_groups
 
   location         = each.value.location
@@ -73,7 +63,7 @@ module "resource_groups" {
 
 module "resource_group_vnet_demo_01" {
   source  = "Azure/avm-res-resources-resourcegroup/azurerm"
-  version = "0.2.0"
+  version = "0.4.0"
 
   location         = local.resource_groups["hub_primary"].location
   name             = "rg-vnet-demo-01-${random_string.suffix.result}"
@@ -176,8 +166,6 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.21)
-
 - <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.7)
 
 ## Resources
@@ -221,13 +209,13 @@ The following Modules are called:
 
 Source: Azure/avm-res-resources-resourcegroup/azurerm
 
-Version: 0.2.0
+Version: 0.4.0
 
 ### <a name="module_resource_groups"></a> [resource\_groups](#module\_resource\_groups)
 
 Source: Azure/avm-res-resources-resourcegroup/azurerm
 
-Version: 0.2.0
+Version: 0.4.0
 
 ### <a name="module_test"></a> [test](#module\_test)
 

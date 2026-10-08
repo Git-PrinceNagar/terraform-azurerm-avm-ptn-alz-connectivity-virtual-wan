@@ -10,21 +10,11 @@ terraform {
       source  = "Azure/azapi"
       version = "~> 2.12"
     }
-    # azurerm is still required: the `Azure/avm-res-resources-resourcegroup/azurerm` module
-    # below, and several AVM modules reached through `../../`, are azurerm-based.
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 4.21"
-    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.7"
     }
   }
-}
-
-provider "azurerm" {
-  features {}
 }
 
 resource "random_string" "suffix" {
@@ -145,7 +135,7 @@ locals {
 
 module "resource_group" {
   source  = "Azure/avm-res-resources-resourcegroup/azurerm"
-  version = "0.2.0"
+  version = "0.4.0"
 
   location         = local.resource_group.location
   name             = local.resource_group.name

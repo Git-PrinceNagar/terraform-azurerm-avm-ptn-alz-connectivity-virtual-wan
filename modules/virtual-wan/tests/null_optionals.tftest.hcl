@@ -52,7 +52,7 @@ run "virtual_wan_defaults" {
     error_message = "parent_id must be composed from the provider subscription and var.resource_group_name when the module does not create the group."
   }
 
-  # AzureRM's Create sets these three unconditionally from `d.Get`, so the schema defaults
+  # AzureRM's Create sets these unconditionally from `d.Get`, so the schema defaults
   # reached ARM on every create and must keep doing so.
   assert {
     condition     = azapi_resource.virtual_wan[0].body.properties.allowBranchToBranchTraffic == true
@@ -69,14 +69,9 @@ run "virtual_wan_defaults" {
     error_message = "type must reproduce the AzureRM schema default \"Standard\"."
   }
 
-  # 🔴 The one property AzureRM sent that AzAPI cannot send. ARM marks
-  # `office365LocalBreakoutCategory` readOnly at every api-version, and azapi's schema
-  # validation rejects the whole body if it is present. If this assertion ever starts
-  # failing, every plan against a Virtual WAN fails with "is not expected here, it's read
-  # only".
   assert {
-    condition     = !can(azapi_resource.virtual_wan[0].body.properties.office365LocalBreakoutCategory)
-    error_message = "office365LocalBreakoutCategory must be absent from the body; ARM marks it read only and azapi rejects it."
+    condition     = azapi_resource.virtual_wan[0].body.properties.office365LocalBreakoutCategory == "None"
+    error_message = "The default Office365 category must be sent, matching AzureRM."
   }
 
   # `var.tags` defaults to NULL and `merge` rejects a null argument. Without the guard this
@@ -87,9 +82,7 @@ run "virtual_wan_defaults" {
   }
 }
 
-# A non-default value on the deprecated-in-practice input must not resurrect the read-only
-# property, and must not fail the plan either.
-run "office365_breakout_non_default_is_still_absent" {
+run "office365_breakout_non_default_is_preserved" {
   command = plan
 
   variables {
@@ -97,8 +90,8 @@ run "office365_breakout_non_default_is_still_absent" {
   }
 
   assert {
-    condition     = !can(azapi_resource.virtual_wan[0].body.properties.office365LocalBreakoutCategory)
-    error_message = "A non-default office365_local_breakout_category must still not reach the body."
+    condition     = azapi_resource.virtual_wan[0].body.properties.office365LocalBreakoutCategory == "OptimizeAndAllow"
+    error_message = "A non-default Office365 category must reach the body."
   }
 }
 

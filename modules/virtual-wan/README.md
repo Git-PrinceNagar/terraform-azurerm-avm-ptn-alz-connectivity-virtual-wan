@@ -7,6 +7,14 @@
 
 This module is designed to simplify the creation of virtual wan based networks in Azure.
 
+The Office365 local breakout category supports `None`, `Optimize`,
+`OptimizeAndAllow` and `All`, matching the AzureRM interface. AzAPI's embedded
+schema marks this property read-only, although the recorded ARM 2025-07-01 probe
+accepted and persisted `OptimizeAndAllow`. Schema validation is therefore disabled
+only for the Virtual WAN resource. This disables validation of its entire body,
+not just the Office365 property; other resources retain their existing validation.
+See [migration deviations](../../docs/MIGRATION-DEVIATIONS.md) for evidence and limits.
+
 ## Features
 
 - Virtual WAN:

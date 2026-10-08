@@ -328,7 +328,6 @@ DESCRIPTION
   }
 }
 
-# tflint-ignore: terraform_unused_declarations // DELIBERATELY unwired: office365LocalBreakoutCategory is absent from the migrated body (open migration gap, ticket 10). The variable is kept in the schema unchanged so no consumer breaks; see main.tf L71-78.
 variable "office365_local_breakout_category" {
   type        = string
   default     = "None"
