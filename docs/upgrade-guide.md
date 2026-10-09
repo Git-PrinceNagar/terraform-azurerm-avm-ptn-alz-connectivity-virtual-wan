@@ -164,7 +164,14 @@ existing `virtual_wan.id`, this module does not manage that WAN's category.
 An omitted connection `routing` preserves the configuration read from the existing matching
 connection, including custom routes and returned legacy transit flags. Explicit routing takes
 precedence; new connections continue to use Azure defaults. These routing reads require list
-access to hub connections. The DNS child leaves Dynamic inbound IP assignment to Azure;
+access to hub connections. The connection request excludes the read-only
+`routingConfiguration.vnetRoutes.bgpConnections` back-reference returned when a hub BGP
+connection references it. Static routes and their configuration, associated and propagated
+tables, and inbound/outbound route maps remain intact. Embedded schema validation stays enabled.
+This omission is covered by mocked plans; a refreshed upgrade plan on an existing BGP/NVA
+estate is still required to confirm the live migration.
+
+The DNS child leaves Dynamic inbound IP assignment to Azure;
 it does not list existing endpoints or resend a server-assigned IP in its request body.
 A Dynamic endpoint adopted from AzureRM can require one in-place update to remove the
 previously recorded IP from the request body. That adoption path has not been tested live.

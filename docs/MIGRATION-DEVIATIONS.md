@@ -64,6 +64,55 @@ Existing-state upgrades still require a normal-refresh plan, review of every ARM
 write and child-collection readback under the upgrade guide. Local mocked tests
 cannot establish that an existing estate's full PUT preserves all child objects.
 
+## Existing connection routing: read-only BGP back-reference
+
+Commit `c889b17007fe314a9b17311017c262d79235998a` restored AzureRM's
+Optional/Computed routing preservation when callers omit `routing`. It copied
+the matching connection's entire ARM `routingConfiguration` into the PUT body,
+including `vnetRoutes.bgpConnections` when a hub BGP connection references it.
+That introduced a regression: the 2025-05-01 connection schema marks that
+back-reference read-only, so AzAPI rejects the request before an applicable
+upgrade plan can be produced.
+
+Accelerator attempt 4 reproduced the rejection with Terraform 1.16.5, AzAPI
+2.13.0 and vWAN `872abe5a21594dd0750dab8de26b89da366b194c`, upgrading
+Starter v17.6.0 / vWAN 0.17.2. Its baseline connection used `defaultRouteTable`,
+propagated `["none"]` to `noneRouteTable`, and retained static-route settings
+`Contains` / `true`, with no static routes. A sidecar BGP connection was present.
+The partial plan's 23 add / 26 change / 0 destroy is not an applicable or
+successful migration plan.
+
+The repair strips only `routingConfiguration.vnetRoutes.bgpConnections`.
+The current [ARM REST schema](https://github.com/Azure/azure-rest-api-specs/blob/88e2199d770d74f3061a162824185fd6894cb7d7/specification/network/resource-manager/Microsoft.Network/Network/stable/2025-05-01/virtualWan.json)
+and its referenced types identify no other read-only field inside
+`routingConfiguration`. Static routes and their configuration, associated and
+propagated tables, route maps, and returned legacy transit flags remain
+preserved. Explicit `routing` still wins. Request schema validation remains
+enabled; this is not an Office365-style exception or a blanket routing ignore.
+Consumer-supplied `ignore_body_changes` remains unchanged.
+
+The regression fixture reproduced the same embedded-schema rejection before
+the repair. Mocked plans now cover the Accelerator baseline shape, custom
+routing with and without BGP references, absent/null/BGP-only `vnetRoutes`,
+explicit routing, fresh connections and unrelated remote VNets. These tests
+do not prove a refreshed upgrade or an apply on the held Accelerator estate.
+That live re-plan and routing readback remain release gates.
+
+Historical evidence explains the detection gap: the earlier combined
+Accelerator leg A at `7041481` exercised both BGP and hub connections and
+re-planned clean, but preceded `c889b17`. No recorded post-`c889b17` live lane
+included a BGP connection, and the previous mock contained only writable
+routing. The successful earlier lane therefore did not validate this later
+carry-over change.
+
+The related body-builder audit found no equivalent raw ARM routing copy in
+ER connections, VPN connections or hub route tables: those requests are
+constructed from configured inputs. The hub has a constructed genesis body
+and an AzAPI merge-update writer, not a copied list response in its declared
+body. That provider-managed merge path is distinct and is not live-validated
+by this regression. This audit does not resolve the separately documented
+hazards around undeclared out-of-band fields on other full PUT writers.
+
 ## Full-multi-region example's Accelerator client-config dependency
 
 The resource-group calls in all six affected examples use the AzAPI

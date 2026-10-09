@@ -4,11 +4,22 @@ locals {
   # AzureRM retains Optional/Computed routing from its read when the caller omits it.
   virtual_network_connection_existing_properties = {
     for key, value in local.virtual_network_connections : key => merge([
-      for connection in data.azapi_resource_list.virtual_network_connections[key].output.value : {
-        for property in ["routingConfiguration", "allowHubToRemoteVnetTransit", "allowRemoteVnetToUseHubVnetGateways"] :
-        property => connection.properties[property]
-        if try(connection.properties[property], null) != null
-      }
+      for connection in data.azapi_resource_list.virtual_network_connections[key].output.value : merge(
+        {
+          for property in ["routingConfiguration", "allowHubToRemoteVnetTransit", "allowRemoteVnetToUseHubVnetGateways"] :
+          property => connection.properties[property]
+          if try(connection.properties[property], null) != null
+        },
+        try(connection.properties.routingConfiguration.vnetRoutes, null) != null ? {
+          routingConfiguration = merge(connection.properties.routingConfiguration, {
+            # ARM returns this BGP back-reference, but the connection PUT schema marks it read-only.
+            vnetRoutes = {
+              for property, route_value in connection.properties.routingConfiguration.vnetRoutes :
+              property => route_value if property != "bgpConnections"
+            }
+          })
+        } : {},
+      )
       if lower(connection.name) == lower(value.name) &&
       lower(connection.properties.remoteVirtualNetwork.id) == lower(value.remote_virtual_network_id)
     ]...)

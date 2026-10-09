@@ -10,6 +10,9 @@ When `routing` is omitted, the module lists connections under the hub and preser
 returned for the same connection name and remote VNet. This includes custom route-table
 associations, propagation, route maps and static routes. Explicit `routing` replaces that
 inherited configuration. A new connection with omitted routing uses Azure defaults.
+The response-only `vnetRoutes.bgpConnections` back-reference is excluded from the request;
+Azure manages it through hub BGP connections. Other routing fields are retained, and
+embedded request schema validation remains enabled.
 Returned legacy transit flags are retained on an existing connection.
 The deployment identity needs permission to list hub/VNet connections.
 
