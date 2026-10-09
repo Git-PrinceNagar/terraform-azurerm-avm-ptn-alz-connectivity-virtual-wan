@@ -9,6 +9,28 @@ Plan with Terraform's default refresh. Never use `-refresh=false`; the
 [Known limitations](#known-limitations) section explains why. Stop if the plan shows a destroy or
 replacement of a Virtual WAN object. Do not approve it.
 
+## Draft child-module pins
+
+The draft uses immutable commits from the existing `Git-PrinceNagar` forks until
+the child modules have compatible registry releases:
+
+| Child | Commit |
+|---|---|
+| Firewall policy | `8a1086ea84efd6db650d4c7cdb54414175f21587` |
+| DNS resolver | `15f11c1019fcf0d81eb30dfd305a37a99b86d2a5` |
+| DDoS protection plan | `643795612a4f2147b14e475be65918036601b736` |
+| Public IP address | `38014e6831db544cad1105e33b9f4bfebcb36dab` |
+| Bastion host | `27407b87ebfc7f8da03babc0b31f014bc253707d` |
+
+The Bastion child pins the same Public IP commit. These updates retain the
+inputs and output attributes consumed by this wrapper. They include DDoS
+role-assignment condition clearing with JSON nulls, DNS Dynamic endpoints that
+leave address assignment to Azure without a list lookup, and Public IP
+`ignore_body_changes` handling that is no longer lifecycle-ignored. Bastion's
+zone documentation and convergence checker are also updated. Use the child
+upgrade guides for their limitations; child-level live checks do not establish
+a full vWAN upgrade at this combined revision.
+
 ## If you use the ALZ Landing Zones Accelerator
 
 Use a compatible Accelerator starter and verify the generated module pin and `providers` map.
@@ -141,9 +163,11 @@ existing `virtual_wan.id`, this module does not manage that WAN's category.
 
 An omitted connection `routing` preserves the configuration read from the existing matching
 connection, including custom routes and returned legacy transit flags. Explicit routing takes
-precedence; new connections continue to use Azure defaults. The DNS child preserves assigned
-Dynamic inbound IPs for matching endpoint names and subnets. These reads require list access
-to hub connections and DNS inbound endpoints.
+precedence; new connections continue to use Azure defaults. These routing reads require list
+access to hub connections. The DNS child leaves Dynamic inbound IP assignment to Azure;
+it does not list existing endpoints or resend a server-assigned IP in its request body.
+A Dynamic endpoint adopted from AzureRM can require one in-place update to remove the
+previously recorded IP from the request body. That adoption path has not been tested live.
 
 These changes alone do not prove a migration plan safe. Compare the evaluated routing and
 Dynamic inbound endpoint IPs against the existing ARM configuration before and after apply.

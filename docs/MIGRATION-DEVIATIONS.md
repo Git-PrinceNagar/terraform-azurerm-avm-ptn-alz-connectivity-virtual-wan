@@ -46,6 +46,15 @@ and a successful local plan with `schema_validation_enabled = false`.
 That measurement supports the exception; it is not a live test of this repair
 revision, nor proof of every category or an upgrade with hubs attached.
 
+An isolated lab run at vWAN commit
+`7be2e258283ee454669ef43b5e9f5a983b480eb7` created a Standard WAN with
+`Optimize` and one attached hub in `centralindia`. ARM readback confirmed the
+category and the attached hub's `Succeeded` state; the refreshed replan showed
+`No changes`, and all seven managed objects were destroyed afterwards. This
+does not establish category updates on an existing WAN, every category, or
+preservation of gateways, connections and other child collections during an
+upgrade. It is not a full vWAN or Accelerator end-to-end test.
+
 Only `azapi_resource.virtual_wan` sets `schema_validation_enabled = false`.
 The flag is resource-wide, so the entire Virtual WAN request body loses embedded
 schema validation. Input enum validation remains, and other resources are not

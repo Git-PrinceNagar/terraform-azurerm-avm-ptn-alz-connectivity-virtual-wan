@@ -1,6 +1,6 @@
 module "firewall_policy" {
   # tflint-ignore: avm_terraform_module_source_required // pre-release packaging exception, not AVM source compliance: immutable-commit pin, to be replaced by the registry source on release
-  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-firewallpolicy.git?ref=0c4a59d2643a39880c9950095056fefce44ff4de"
+  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-firewallpolicy.git?ref=8a1086ea84efd6db650d4c7cdb54414175f21587"
   for_each = local.firewall_policies
 
   location                                          = each.value.location
@@ -98,7 +98,7 @@ module "virtual_network_side_car" {
 
 module "dns_resolver" {
   # tflint-ignore: avm_terraform_module_source_required // pre-release packaging exception, not AVM source compliance: immutable-commit pin, to be replaced by the registry source on release
-  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-dnsresolver.git?ref=b5dadb4bf4024a3a0999f80a4da91a657c2cdc84"
+  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-dnsresolver.git?ref=15f11c1019fcf0d81eb30dfd305a37a99b86d2a5"
   for_each = local.private_dns_resolver
 
   location                    = each.value.location
@@ -157,7 +157,7 @@ module "private_dns_zone_auto_registration" {
 
 module "ddos_protection_plan" {
   # tflint-ignore: avm_terraform_module_source_required // pre-release packaging exception, not AVM source compliance: immutable-commit pin, to be replaced by the registry source on release
-  source = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-ddosprotectionplan.git?ref=356eec4f7a515ea473f489b6b27595f911292550"
+  source = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-ddosprotectionplan.git?ref=643795612a4f2147b14e475be65918036601b736"
   count  = local.ddos_protection_plan_enabled ? 1 : 0
 
   location            = local.ddos_protection_plan.location
@@ -169,7 +169,7 @@ module "ddos_protection_plan" {
 
 module "bastion_public_ip" {
   # tflint-ignore: avm_terraform_module_source_required // pre-release packaging exception, not AVM source compliance: immutable-commit pin, to be replaced by the registry source on release
-  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-publicipaddress.git?ref=c9f4bd6951e8b9bc8c8ec3fe8a5975b1def750d4"
+  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-publicipaddress.git?ref=38014e6831db544cad1105e33b9f4bfebcb36dab"
   for_each = local.bastion_host_public_ips
 
   location                = each.value.location
@@ -194,7 +194,7 @@ module "bastion_public_ip" {
 
 module "bastion_host" {
   # tflint-ignore: avm_terraform_module_source_required // pre-release packaging exception, not AVM source compliance: immutable-commit pin, to be replaced by the registry source on release
-  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-bastionhost.git?ref=6e93954c968958617cf22f671baa23cc8caab84b"
+  source   = "git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-bastionhost.git?ref=27407b87ebfc7f8da03babc0b31f014bc253707d"
   for_each = local.bastion_hosts
 
   location               = each.value.location

@@ -1574,31 +1574,31 @@ The following Modules are called:
 
 Source: git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-bastionhost.git
 
-Version: 6e93954c968958617cf22f671baa23cc8caab84b
+Version: 27407b87ebfc7f8da03babc0b31f014bc253707d
 
 ### <a name="module_bastion_public_ip"></a> [bastion\_public\_ip](#module\_bastion\_public\_ip)
 
 Source: git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-publicipaddress.git
 
-Version: c9f4bd6951e8b9bc8c8ec3fe8a5975b1def750d4
+Version: 38014e6831db544cad1105e33b9f4bfebcb36dab
 
 ### <a name="module_ddos_protection_plan"></a> [ddos\_protection\_plan](#module\_ddos\_protection\_plan)
 
 Source: git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-ddosprotectionplan.git
 
-Version: 356eec4f7a515ea473f489b6b27595f911292550
+Version: 643795612a4f2147b14e475be65918036601b736
 
 ### <a name="module_dns_resolver"></a> [dns\_resolver](#module\_dns\_resolver)
 
 Source: git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-dnsresolver.git
 
-Version: b5dadb4bf4024a3a0999f80a4da91a657c2cdc84
+Version: 15f11c1019fcf0d81eb30dfd305a37a99b86d2a5
 
 ### <a name="module_firewall_policy"></a> [firewall\_policy](#module\_firewall\_policy)
 
 Source: git::https://github.com/Git-PrinceNagar/terraform-azurerm-avm-res-network-firewallpolicy.git
 
-Version: 0c4a59d2643a39880c9950095056fefce44ff4de
+Version: 8a1086ea84efd6db650d4c7cdb54414175f21587
 
 ### <a name="module_private_dns_zone_auto_registration"></a> [private\_dns\_zone\_auto\_registration](#module\_private\_dns\_zone\_auto\_registration)
 
