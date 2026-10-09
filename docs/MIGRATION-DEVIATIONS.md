@@ -106,12 +106,47 @@ routing. The successful earlier lane therefore did not validate this later
 carry-over change.
 
 The related body-builder audit found no equivalent raw ARM routing copy in
-ER connections, VPN connections or hub route tables: those requests are
-constructed from configured inputs. The hub has a constructed genesis body
-and an AzAPI merge-update writer, not a copied list response in its declared
-body. That provider-managed merge path is distinct and is not live-validated
-by this regression. This audit does not resolve the separately documented
-hazards around undeclared out-of-band fields on other full PUT writers.
+ER connections or hub route tables: those requests are constructed from
+configured inputs. The hub has a constructed genesis body and an AzAPI
+merge-update writer, not a copied list response in its declared body. That
+provider-managed merge path is distinct and is not live-validated by this
+regression. This audit does not resolve the separately documented hazards
+around undeclared out-of-band fields on other full PUT writers.
+
+## P2S omitted routing on a full gateway PUT
+
+The held Accelerator attempt 5 candidate plan at Starter `62e3836` /
+vWAN `fed7fc7` had 23 additions, 27 changes, no destroys and no replacements.
+Its frozen plan JSON SHA256 is
+`591110BECEFEF661869227443532D44D876F800640F0CA0CC08508EF230524F3`.
+The plan was not applied. The baseline ARM GET showed the P2S connection
+configuration associated with `defaultRouteTable` and propagated to
+`noneRouteTable` with label `none`, while the candidate's full P2S gateway
+body omitted `routingConfiguration`. Since `p2SConnectionConfigurations`
+is an inline property in the gateway's full PUT, and there is no equivalent
+isolated ARM readback proving omission is merge-exempt, plan counts do not
+establish that the routing survives.
+
+The module now reads only the existing P2S gateway's connection
+configurations. If the matching named configuration has ARM routing and the
+caller has no routing input (the module does not expose one), that routing
+is carried into the PUT; a missing gateway or configuration leaves it absent
+and uses Azure defaults. The P2S 2025-07-01 schema also marks
+`routingConfiguration.vnetRoutes.bgpConnections` read-only, so that one
+response-only field is filtered while associated/propagated tables, route
+maps, static routes, and static-route settings are retained. A mocked
+regression test covers the attempt-5 table association and propagation shape,
+the static-route configuration, and removal of the BGP back-reference. It
+does not prove the live attempt-5 upgrade; the retained estate must be
+re-planned and reviewed before apply.
+
+The VPN connection body also omits caller-unconfigured routing, but historical
+R4-clean evidence at `C:\Bugs\AzApi Config\.scratch\validation\tier3\step-e\RESULT.md`
+records a write by the VPN connection resource itself with routing omitted,
+followed by ARM readback showing its associated route table, propagated IDs
+and labels unchanged. That distinct resource-specific measurement supports
+leaving the VPN connection writer unchanged; it is not an after-write result
+for attempt 5's `noneRouteTable` configuration.
 
 ## Full-multi-region example's Accelerator client-config dependency
 

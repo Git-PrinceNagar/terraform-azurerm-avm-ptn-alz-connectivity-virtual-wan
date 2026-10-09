@@ -1,5 +1,16 @@
 # Point to site VPN Gateway.
 #
+data "azapi_resource" "existing_p2s_gateway" {
+  for_each = local.p2s_gateways != null ? local.p2s_gateways : {}
+
+  resource_id      = "${local.p2s_gateway_parent_ids[each.key]}/providers/Microsoft.Network/p2sVpnGateways/${each.value.name}"
+  type             = var.resource_types.network_p2s_vpn_gateways
+  ignore_not_found = true
+  response_export_values = [
+    "properties.p2SConnectionConfigurations",
+  ]
+}
+
 # ---------------------------------------------------------------------------
 # TWO RESOURCES, TWO DIFFERENT SHAPES, AND THE DIFFERENCE IS MEASURED.
 #

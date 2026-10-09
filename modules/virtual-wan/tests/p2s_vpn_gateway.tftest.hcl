@@ -147,6 +147,17 @@ run "genesis" {
 run "p2s_optionals_all_null" {
   command = plan
 
+  override_data {
+    target = data.azapi_resource.existing_p2s_gateway["gw_bare"]
+    values = {
+      output = {
+        properties = {
+          p2SConnectionConfigurations = []
+        }
+      }
+    }
+  }
+
   variables {
     p2s_gateway_vpn_server_configurations = {
       cfg_bare = {
@@ -658,5 +669,99 @@ run "p2s_empty_maps" {
   assert {
     condition     = length(azapi_resource.p2s_gateway) == 0 && length(azapi_resource.p2s_gateway_vpn_server_configuration) == 0 && length(azapi_update_resource.p2s_gateway_vpn_server_configuration) == 0 && length(azapi_resource_action.p2s_gateway_vpn_server_configuration_tags) == 0
     error_message = "Empty p2s_gateways and p2s_gateway_vpn_server_configurations maps must create no resources, the tag writer included: its for_each is the same map as the full writer's, so a tag writer exists if and only if a configuration does."
+  }
+}
+
+run "omitted_p2s_routing_preserves_existing_arm_value" {
+  command = plan
+
+  variables {
+    p2s_gateway_vpn_server_configurations = {
+      cfg_bare = {
+        name                     = "vpnsc-bare"
+        virtual_hub_key          = "hub_a"
+        vpn_authentication_types = ["Certificate"]
+      }
+    }
+    p2s_gateways = {
+      gw_bare = {
+        name                                     = "p2sgw-bare"
+        virtual_hub_key                          = "hub_a"
+        scale_unit                               = 1
+        p2s_gateway_vpn_server_configuration_key = "cfg_bare"
+        connection_configuration = {
+          name = "conn-bare"
+          vpn_client_address_pool = {
+            address_prefixes = ["10.100.0.0/24"]
+          }
+        }
+      }
+    }
+  }
+
+  override_data {
+    target = data.azapi_resource.existing_p2s_gateway["gw_bare"]
+    values = {
+      output = {
+        properties = {
+          p2SConnectionConfigurations = [{
+            name = "conn-bare"
+            properties = {
+              routingConfiguration = {
+                associatedRouteTable = {
+                  id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualHubs/vhub-a/hubRouteTables/defaultRouteTable"
+                }
+                propagatedRouteTables = {
+                  ids    = [{ id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualHubs/vhub-a/hubRouteTables/noneRouteTable" }]
+                  labels = ["none"]
+                }
+                inboundRouteMap = {
+                  id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualHubs/vhub-a/routeMaps/inbound"
+                }
+                outboundRouteMap = {
+                  id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualHubs/vhub-a/routeMaps/outbound"
+                }
+                vnetRoutes = {
+                  bgpConnections = [{
+                    id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualHubs/vhub-a/bgpConnections/primary-nva1"
+                  }]
+                  staticRoutes = []
+                  staticRoutesConfig = {
+                    propagateStaticRoutes          = true
+                    vnetLocalRouteOverrideCriteria = "Contains"
+                  }
+                }
+              }
+            }
+          }]
+        }
+      }
+    }
+  }
+
+  assert {
+    condition = (
+      azapi_resource.p2s_gateway["gw_bare"].body.properties.p2SConnectionConfigurations[0].properties.routingConfiguration.associatedRouteTable.id ==
+      "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualHubs/vhub-a/hubRouteTables/defaultRouteTable" &&
+      azapi_resource.p2s_gateway["gw_bare"].body.properties.p2SConnectionConfigurations[0].properties.routingConfiguration.propagatedRouteTables.ids[0].id ==
+      "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualHubs/vhub-a/hubRouteTables/noneRouteTable" &&
+      azapi_resource.p2s_gateway["gw_bare"].body.properties.p2SConnectionConfigurations[0].properties.routingConfiguration.propagatedRouteTables.labels == ["none"] &&
+      azapi_resource.p2s_gateway["gw_bare"].body.properties.p2SConnectionConfigurations[0].properties.routingConfiguration.inboundRouteMap.id ==
+      "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualHubs/vhub-a/routeMaps/inbound" &&
+      azapi_resource.p2s_gateway["gw_bare"].body.properties.p2SConnectionConfigurations[0].properties.routingConfiguration.outboundRouteMap.id ==
+      "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-test/providers/Microsoft.Network/virtualHubs/vhub-a/routeMaps/outbound" &&
+      azapi_resource.p2s_gateway["gw_bare"].body.properties.p2SConnectionConfigurations[0].properties.routingConfiguration.vnetRoutes.staticRoutesConfig.propagateStaticRoutes &&
+      azapi_resource.p2s_gateway["gw_bare"].body.properties.p2SConnectionConfigurations[0].properties.routingConfiguration.vnetRoutes.staticRoutesConfig.vnetLocalRouteOverrideCriteria == "Contains" &&
+      !contains(keys(azapi_resource.p2s_gateway["gw_bare"].body.properties.p2SConnectionConfigurations[0].properties.routingConfiguration.vnetRoutes), "bgpConnections")
+    )
+    error_message = "Omitted P2S routing must preserve writable ARM routing fields and filter the read-only BGP back-reference."
+  }
+
+  assert {
+    condition = (
+      data.azapi_resource.existing_p2s_gateway["gw_bare"].ignore_not_found &&
+      data.azapi_resource.existing_p2s_gateway["gw_bare"].response_export_values == ["properties.p2SConnectionConfigurations"]
+    )
+    error_message = "The preservation read must tolerate a new gateway's 404 and export only its inline connection configurations."
   }
 }

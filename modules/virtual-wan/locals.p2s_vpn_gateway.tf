@@ -318,11 +318,33 @@ locals {
   #                                          exposes no input, so the literal is FALSE
   #   routingConfiguration                   expandPointToSiteVPNGatewayConnectionRouteConfiguration
   #                                          L414-L418 returns NIL for an empty `route` list,
-  #                                          and this module exposes no `route` input, so the
-  #                                          key is ABSENT. Reproduced by simply not emitting
-  #                                          it -- an explicit null would be pruned by
-  #                                          `ignore_null_property` to the same result, but
-  #                                          not emitting it says so more plainly.
+  #                                          and this module exposes no `route` input. A fresh
+  #                                          gateway therefore has no routing key to send;
+  #                                          however, AzureRM's Optional+Computed read could
+  #                                          carry existing ARM routing into a later update.
+  #                                          The data read below preserves that existing value.
+  p2s_gateway_existing_routing_configurations = {
+    for key, value in(local.p2s_gateways != null ? local.p2s_gateways : {}) : key => try(
+      one([
+        for configuration in try(data.azapi_resource.existing_p2s_gateway[key].output.properties.p2SConnectionConfigurations, []) :
+        configuration.properties.routingConfiguration
+        if configuration.name == value.connection_configuration.name && try(configuration.properties.routingConfiguration, null) != null
+      ]),
+      null,
+    )
+  }
+  p2s_gateway_preserved_routing_configurations = {
+    for key, routing_configuration in local.p2s_gateway_existing_routing_configurations : key => routing_configuration != null ? merge(
+      routing_configuration,
+      try(routing_configuration.vnetRoutes, null) != null ? {
+        vnetRoutes = {
+          for property, property_value in routing_configuration.vnetRoutes : property => property_value
+          if property != "bgpConnections"
+        }
+      } : {},
+    ) : null
+  }
+
   p2s_gateway_bodies = {
     for key, value in(local.p2s_gateways != null ? local.p2s_gateways : {}) : key => {
       properties = merge(
@@ -334,10 +356,15 @@ locals {
               # wrong; confirmed against the classifier output L128 and against
               # `spec-2025-07-01/virtualWan.json`.
               name = value.connection_configuration.name
-              properties = {
-                vpnClientAddressPool   = { addressPrefixes = value.connection_configuration.vpn_client_address_pool.address_prefixes }
-                enableInternetSecurity = false
-              }
+              properties = merge(
+                {
+                  vpnClientAddressPool   = { addressPrefixes = value.connection_configuration.vpn_client_address_pool.address_prefixes }
+                  enableInternetSecurity = false
+                },
+                local.p2s_gateway_preserved_routing_configurations[key] != null ? {
+                  routingConfiguration = local.p2s_gateway_preserved_routing_configurations[key]
+                } : {},
+              )
             }
           ]
           vpnServerConfiguration = { id = azapi_resource.p2s_gateway_vpn_server_configuration[value.p2s_gateway_vpn_server_configuration_key].id }
