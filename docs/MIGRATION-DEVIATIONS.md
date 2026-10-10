@@ -145,8 +145,31 @@ R4-clean evidence at `C:\Bugs\AzApi Config\.scratch\validation\tier3\step-e\RESU
 records a write by the VPN connection resource itself with routing omitted,
 followed by ARM readback showing its associated route table, propagated IDs
 and labels unchanged. That distinct resource-specific measurement supports
-leaving the VPN connection writer unchanged; it is not an after-write result
-for attempt 5's `noneRouteTable` configuration.
+omission for that historical default-route fixture; it is not an after-write
+result for attempt 5's `noneRouteTable` configuration and does not establish
+preservation for the current full request body. The decision to leave this
+writer unchanged has therefore been superseded by explicit preservation.
+
+The VPN connection now reads only `properties.routingConfiguration` when the
+caller omits `routing`, using the same resource type/API version as its writer.
+If present, that routing is carried into the PUT with only the 2025-07-01
+schema's read-only `vnetRoutes.bgpConnections` removed. A 404 or absent routing
+leaves the field omitted. Explicit caller routing keeps its existing request
+shape and precedence, including the documented route-map input behavior.
+Regression tests cover the attempt-5 default association and `none` propagation,
+additional writable route maps/static routes with a BGP back-reference, a fresh
+connection, and explicit routing. Before the fix, the new writable-routing
+assertion failed because the body had no routing; afterwards it passed.
+
+Earlier null-optionals coverage asserted routing was absent for a fresh
+connection and did not supply existing non-default ARM routing. Historical
+step-E readback covered default propagation, not attempt 5's `none` propagation.
+Those missing scenarios explain why the preservation gap was not caught before
+the held full-body review. Neither mocked tests nor the held candidate's
+zero-destroy plan prove a completed live migration. The P2S-only repair at
+`0c28b816b5b3b1530506744b477b13472700416a` has a separate plan-only routing match
+in `evidence-routing-fix-0c28`; both routing fixes still require a same-state
+candidate replan and review before any apply.
 
 ## Full-multi-region example's Accelerator client-config dependency
 

@@ -1,5 +1,19 @@
 # Create a site to site vpn connection between a vpn gateway and a vpn site.
 
+data "azapi_resource" "existing_vpn_connection" {
+  for_each = {
+    for key, value in local.vpn_site_connections : key => value
+    if try(value.routing, null) == null
+  }
+
+  resource_id      = "${each.value.vpn_gateway_id}/vpnConnections/${each.value.name}"
+  type             = var.resource_types.network_vpn_gateways_vpn_connections
+  ignore_not_found = true
+  response_export_values = [
+    "properties.routingConfiguration",
+  ]
+}
+
 resource "azapi_resource" "this" {
   for_each = local.vpn_site_connections
 

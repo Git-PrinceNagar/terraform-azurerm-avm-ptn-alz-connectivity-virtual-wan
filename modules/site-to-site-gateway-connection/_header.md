@@ -2,6 +2,15 @@
 
 This submodule deploys an Azure site-to-site connection between site-to-site Gateway and remote gateway in the Virtual Hub
 
+## Routing on existing connections
+
+When `routing` is omitted, the module reads the existing connection and preserves
+its writable ARM routing. A missing connection leaves routing absent so Azure
+can apply its defaults. Explicit `routing` remains authoritative and does not
+require this read. The read-only `vnetRoutes.bgpConnections` back-reference is
+excluded from preserved routing; writable route tables, route maps and static
+route settings are retained.
+
 ## The pre-shared key is now write-only — and rotation still produces a plan
 
 This module previously used the AzureRM provider, where `shared_key` was an ordinary schema

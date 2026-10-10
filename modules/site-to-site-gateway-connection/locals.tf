@@ -1,6 +1,21 @@
 locals {
   vpn_site_connections = var.vpn_site_connection != null ? var.vpn_site_connection : {}
 
+  vpn_site_connection_existing_routing_configurations = {
+    for key, connection in data.azapi_resource.existing_vpn_connection : key => try(connection.output.properties.routingConfiguration, null)
+  }
+  vpn_site_connection_preserved_routing_configurations = {
+    for key, routing_configuration in local.vpn_site_connection_existing_routing_configurations : key => routing_configuration != null ? merge(
+      routing_configuration,
+      try(routing_configuration.vnetRoutes, null) != null ? {
+        vnetRoutes = {
+          for property, property_value in routing_configuration.vnetRoutes : property => property_value
+          if property != "bgpConnections"
+        }
+      } : {},
+    ) : null
+  }
+
   # AzureRM's schema applies defaults BEFORE the expander runs, and the expander then sends
   # every one of these with `pointer.To(d.Get(...))` -- unconditionally, not only when the
   # consumer set them. A migrated connection therefore has to send the same literals, or the
@@ -129,7 +144,9 @@ locals {
               )
             } : {},
           )
-        } : {},
+          } : (lookup(local.vpn_site_connection_preserved_routing_configurations, key, null) != null ? {
+            routingConfiguration = local.vpn_site_connection_preserved_routing_configurations[key]
+        } : {}),
         try(value.traffic_selector_policy, null) != null ? {
           trafficSelectorPolicies = [
             {
